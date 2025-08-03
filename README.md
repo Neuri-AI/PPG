@@ -30,7 +30,7 @@
 
 ## Install
 
-There ar 3 ways to install PPG:
+There are 3 ways to install PPG:
 
 - Install with PIP: `pip install ppg`
 - [Download the latest release](https://github.com/runesc/PPG/releases/)
