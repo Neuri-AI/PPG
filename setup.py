@@ -25,7 +25,6 @@ setup(
     version=PACKAGE['version'],
     description=PACKAGE['description'],
     long_description=PACKAGE['description'] + '\n\nHome page: ',
-    long_description=PACKAGE['description'] + '\n\nHome page: ',
     author=PACKAGE['author'],
     author_email=PACKAGE['author_email'],
     url=PACKAGE['homepage'],
