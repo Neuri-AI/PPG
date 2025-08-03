@@ -1,4 +1,6 @@
 import sys
+import json
+import traceback
 from collections import namedtuple
 from ppg_runtime import _state, _frozen, _source
 from ppg_runtime._resources import ResourceLocator
@@ -6,6 +8,41 @@ from ppg_runtime._signal import SignalWakeupHandler
 from ppg_runtime.excepthook import _Excepthook, StderrExceptionHandler
 from ppg_runtime.platform import is_windows, is_mac
 from functools import lru_cache
+from typing import Dict, Type, Optional, Any, get_origin, get_args, Union
+from pydantic import ValidationError, create_model, BaseModel
+
+
+try:
+    from PySide6.QtCore import QObject, Signal, Slot
+    from PySide6.QtWebChannel import QWebChannel
+except ImportError:
+    try:
+        from PySide2.QtCore import QObject, Signal, Slot
+        from PySide2.QtWebChannel import QWebChannel
+    except ImportError:
+        try:
+            from PyQt6.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot
+            from PyQt6.QtWebChannel import QWebChannel
+        except ImportError:
+            try:
+                from PyQt5.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot
+                from PyQt5.QtWebChannel import QWebChannel
+            except ImportError:
+                raise ImportError(
+                    "No se encontró PySide6, PySide2, PyQt6 ni PyQt5 instalado")
+
+def init_lifecycle(cls):
+    def __init__(self, *args, **kwargs):
+        super(cls, self).__init__(*args, **kwargs)
+        self.component_will_mount()
+        self.allow_bg()
+        self.render_()
+        self.component_did_mount()
+        self.set_CSS()
+        self.responsive_UI()
+
+    cls.__init__ = __init__
+    return cls
 
 
 def cached_property(getter):
@@ -17,6 +54,312 @@ def cached_property(getter):
     """
     return property(lru_cache()(getter))
 
+class WebEngineBridge(QObject):
+    bridge = Signal(str)
+
+    def __init__(self):
+        super().__init__()
+        self.handlers = {}
+
+    def register_handler(self, event_name, func):
+        self.handlers[event_name] = func
+
+    @Slot(str, result=str)
+    def send(self, message_json):
+        try:
+            message = json.loads(message_json)
+            event = message.get("event")
+            payload = message.get("payload")
+            if event in self.handlers:
+                result = self.handlers[event](payload)
+                response = {"success": True, "data": result}
+            else:
+                response = {"success": False,
+                            "error": f"Handler for event '{event}' not found."}
+        except Exception:
+            response = {
+                "success": False,
+                "error": traceback.format_exc()
+            }
+        return json.dumps(response)
+
+    def emit_to_ui(self, event, payload):
+        """Emit an event to the UI with the given payload.
+
+        Args:
+            event (str): event name to emit
+            payload (Any): event payload
+        """
+        message = json.dumps({"event": event, "payload": payload})
+        self.bridge.emit(message)
+
+class BridgeManager:
+    _instances = []
+
+    def __init__(self, webview, channel_name="bridge"):
+        self.webview = webview
+        self.bridge = WebEngineBridge()
+
+        self.channel = QWebChannel()
+        self.channel.registerObject(channel_name, self.bridge)
+        self.webview.page().setWebChannel(self.channel)
+
+        BridgeManager._instances.append(self)
+
+    def register(self, event, func):
+        self.bridge.register_handler(event, func)
+
+    def unregister(self, event):
+        """Unregisters an event handler."""
+        if event in self.bridge.handlers:
+            del self.bridge.handlers[event]
+
+    def emit(self, event, payload):
+        """Sends an event only to current instance's UI."""
+        self.bridge.emit_to_ui(event, payload)
+
+    @classmethod
+    def emit_all(cls, event, payload):
+        """Sends an event to all instances of BridgeManager."""
+        for instance in cls._instances:
+            instance.bridge.emit_to_ui(event, payload)
+
+    def close(self):
+        """Closes the bridge and removes it from the instances list."""
+        self.webview.page().setWebChannel(None)
+        BridgeManager._instances.remove(self)
+
+class Pydux:
+    _instance = None
+    _store = None
+    _observers = []
+    _schema = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Create a new instance of the class. If the class is Pydux, it will create a singleton instance.
+        If the class is a subclass of Pydux, it will create a normal instance but use the shared store.
+
+        Args:
+            cls: The class to create an instance of.
+            *args: Positional arguments to pass to the class constructor.
+        """
+       # if cls is Pydux and cls._instance is not None:
+        if cls is Pydux:
+            if not cls._instance:
+                cls._instance = super(Pydux, cls).__new__(cls, *args, **kwargs)
+            return cls._instance
+        else:
+            # For subclasses, create a new instance but share the store
+            return super(Pydux, cls).__new__(cls, *args, **kwargs)
+
+    def _default_for_type(self, typ):
+        if typ == int:
+            return 0
+        if typ == str:
+            return ""
+        if typ == bool:
+            return True
+        if typ == dict or get_origin(typ) == dict:
+            return {}
+        if typ == list or get_origin(typ) == list:
+            return []
+        if typ == float:
+            return 0.0
+        if typ == Any:
+            return None
+        if get_origin(typ) == Optional:
+            inner_type = get_args(typ)[0]
+            return self._default_for_type(inner_type)
+        if get_origin(typ) == Union:
+            first_type = get_args(typ)[0]
+            return self._default_for_type(first_type)
+
+        if isinstance(typ, type) and issubclass(typ, BaseModel):
+            defaults = {}
+            for name, field in typ.model_fields.items():
+                field_type = field.annotation
+                defaults[name] = self._default_for_type(field_type)
+            return typ(**defaults)
+
+        return None
+
+    def set_schema(self, schema_dict: Dict[str, Type]) -> None:
+        """
+        Receives a dictionary {"field": type} and creates a dynamic Pydantic model.
+
+        Args:
+            schema_dict (Dict[str, Type]): Dictionary with field names and their types.
+        """
+        if Pydux._schema is not None:
+            print("Warning: Schema already set. This will reset the store.")
+
+        fields = {}
+        for key, typ in schema_dict.items():
+            default = self._default_for_type(typ)
+            fields[key] = (Optional[typ], default)
+
+        Pydux._schema = create_model('DynamicStoreModel', **fields)
+        Pydux._store = Pydux._schema()
+
+    def add_to_store(self, obj: Dict[str, Any]) -> None:
+        if Pydux._schema is None:
+            # Sin esquema, actualizar dict simple
+            if Pydux._store is None:
+                Pydux._store = {}
+            if isinstance(Pydux._store, dict):
+                Pydux._store.update(obj)
+            else:
+                # Fallback si había un modelo antes
+                Pydux._store = obj
+        else:
+            try:
+                current_data = Pydux._store.model_dump() if Pydux._store else {}
+                combined = {**current_data, **obj}
+                validated = Pydux._schema(**combined)
+                Pydux._store = validated
+            except ValidationError as e:
+                raise TypeError(f"Validation error: {e}")
+
+        self._notify_observers()
+
+    def update_nested_model(self, model_key: str, partial_data: Dict[str, Any]) -> None:
+        """
+        Allows partial updates on nested models.
+        Example: store.update_nested_model("user", {"name": "New name"})
+
+        Args:
+            model_key (str): Model key in the store to update.
+            partial_data (Dict[str, Any]): Partial data to update the model with.
+        """
+        if Pydux._schema is None:
+            raise ValueError(
+                "Schema must be set before using update_nested_model")
+
+        if not Pydux._store:
+            raise ValueError("Store is empty")
+
+        current_data = Pydux._store.model_dump()
+
+        if model_key not in current_data:
+            raise KeyError(f"Model key '{model_key}' not found in store")
+
+        current_model_data = current_data[model_key]
+        if current_model_data is None:
+            raise ValueError(f"Model '{model_key}' is None, cannot update")
+
+        # Merge de datos actuales con los nuevos
+        if isinstance(current_model_data, dict):
+            updated_model_data = {**current_model_data, **partial_data}
+        else:
+            # Si es un modelo Pydantic, convertirlo a dict primero
+            updated_model_data = {
+                **current_model_data.__dict__, **partial_data}
+
+        # Actualizar usando el método principal
+        self.add_to_store({model_key: updated_model_data})
+
+    def _notify_observers(self) -> None:
+        for observer in Pydux._observers:
+            if Pydux._schema is None:
+                # Sin schema, pasar dict directamente
+                observer.update_store(
+                    Pydux._store if isinstance(Pydux._store, dict) else {})
+            else:
+                # Con schema, usar model_dump
+                observer.update_store(
+                    Pydux._store.model_dump() if Pydux._store else {})
+
+    def subscribe_to_store(self, observer: Any) -> None:
+        if hasattr(observer, 'update_store') and callable(observer.update_store):
+            if observer not in Pydux._observers:  # Evitar duplicados
+                Pydux._observers.append(observer)
+        else:
+            raise ValueError("Observer must have an 'update_store' method")
+
+    def unsubscribe_from_store(self, observer: Any) -> None:
+        if observer in Pydux._observers:
+            Pydux._observers.remove(observer)
+        else:
+            raise ValueError("Observer not found in store")
+
+    def get_nested(self, path: str) -> Any:
+        """
+        Get a nested value from the store using a dot-notated path.
+        Example: get_nested("user.name") returns the name of the user.
+
+        Args:
+            path (str): The dot-notated path to the value in the store.
+        """
+        if not Pydux._store:
+            return None
+
+        keys = path.split('.')
+        current = Pydux._store.model_dump() if Pydux._schema else Pydux._store
+
+        try:
+            for key in keys:
+                if isinstance(current, dict):
+                    current = current[key]
+                else:
+                    current = getattr(current, key)
+            return current
+        except (KeyError, AttributeError):
+            return None
+
+    @property
+    def store(self) -> Dict[str, Any]:
+        if Pydux._schema is None:
+            return Pydux._store if isinstance(Pydux._store, dict) else {}
+        return Pydux._store.model_dump() if Pydux._store else {}
+
+    @store.setter
+    def store(self, value: Dict[str, Any]) -> None:
+        self.add_to_store(value)
+
+    def clear_store(self) -> None:
+        """Clear the store and reset it to an empty state."""
+        if Pydux._schema:
+            Pydux._store = Pydux._schema()
+        else:
+            Pydux._store = {}
+        self._notify_observers()
+
+    def has_key(self, key: str) -> bool:
+        """Check if a key exists in the store.
+
+        Args:
+            key (str): The key to check in the store.
+        """
+        store_dict = self.store
+        return key in store_dict and store_dict[key] is not None
+
+    def remove_from_store(self, key: str) -> None:
+        """Remove a key from the store, setting it to None if schema is used."""
+        if Pydux._schema is None:
+            if isinstance(Pydux._store, dict) and key in Pydux._store:
+                del Pydux._store[key]
+                self._notify_observers()
+            else:
+                raise KeyError(f"Key '{key}' not found in store")
+        else:
+            current_data = Pydux._store.model_dump() if Pydux._store else {}
+            if key in current_data:
+                current_data[key] = None  # Set to None instead of deleting
+                validated = Pydux._schema(**current_data)
+                Pydux._store = validated
+                self._notify_observers()
+            else:
+                raise KeyError(f"Key '{key}' not found in store")
+
+    def update_store(self, store: Dict[str, Any]) -> None:
+        """This is a placeholder method to be overridden by subclasses.
+        It can be used to update the store with new data.
+
+        Args:
+            store (Dict[str, Any]): The new data to update the store with.
+        """
+        pass
 
 class PPGStore:
     _instance = None
@@ -24,6 +367,11 @@ class PPGStore:
     _observers = []
 
     def __new__(cls, *args, **kwargs):
+        import warnings
+        warnings.warn(
+            "PPGStore is deprecated and will be removed in a future release. Use Pydux instead.",
+            DeprecationWarning
+        )
         if not cls._instance:
             cls._instance = super(PPGStore, cls).__new__(cls, *args, **kwargs)
         return cls._instance
@@ -55,6 +403,19 @@ class PPGStore:
         else:
             raise ValueError("Observer must have an 'update_store' method")
 
+    def unsubscribe_from_store(self, observer):
+        """
+        Unsubscribe an observer from the store.
+        Raises ValueError if the observer is not found.
+        """
+        if observer in self._observers:
+            self._observers.remove(observer)
+        else:
+            raise ValueError("Observer not found in store")
+
+    def update_store(self, store):
+        pass
+
     def remove_observer(self, observer):
         if observer in self._observers:
             self._observers.remove(observer)
@@ -72,21 +433,6 @@ class PPGStore:
             self._notify_observers()
         else:
             raise ValueError("store must be a dictionary")
-
-
-def init_lifecycle(cls):
-    def __init__(self, *args, **kwargs):
-        super(cls, self).__init__(*args, **kwargs)
-        self.component_will_mount()
-        self.allow_bg()
-        self.render_()
-        self.component_did_mount()
-        self.set_CSS()
-        self.responsive_UI()
-
-    cls.__init__ = __init__
-    return cls
-
 
 class PPGLifeCycle:
     def component_will_mount(self): pass
@@ -109,6 +455,7 @@ class PPGLifeCycle:
                         self.setAttribute(Qt.WA_StyledBackground, True)
                     except ImportError:
                         pass
+
     def render_(self): pass
 
     def resizeEvent(self, e=None):
@@ -134,6 +481,16 @@ class PPGLifeCycle:
         return ResourceLocator(resource_dirs)
 
     @cached_property
+    def build_settings(self):
+        """
+        This dictionary contains the values of the settings listed in setting
+        "public_settings". Eg. `self.build_settings['version']`.
+        """
+        if is_frozen():
+            return _frozen.load_build_settings()
+        return _source.load_build_settings(self._project_dir)
+
+    @cached_property
     def _project_dir(self):
         assert not is_frozen(), 'Only available when running from source'
         return _source.get_project_dir()
@@ -149,7 +506,6 @@ class PPGLifeCycle:
 
     @staticmethod
     def calc(a, b): return int((a * b) / 100.0)
-
 
 class _ApplicationContext:
     """

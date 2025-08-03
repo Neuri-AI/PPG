@@ -1,12 +1,11 @@
 import sys
 from ppg_runtime.application_context.${python_bindings} import ApplicationContext
-from ppg_runtime.application_context import PPGStore, PPGLifeCycle, init_lifecycle
+from ppg_runtime.application_context import Pydux, PPGLifeCycle, init_lifecycle
 from ${python_bindings}.QtWidgets import QMainWindow, QLabel
 
 @init_lifecycle
-class MyApp(QMainWindow, PPGLifeCycle, PPGStore):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class ${app_name}(QMainWindow, PPGLifeCycle, Pydux):
+    def component_will_mount(self):
         self.subscribe_to_store(self)
 
     def render_(self):
@@ -18,7 +17,7 @@ class MyApp(QMainWindow, PPGLifeCycle, PPGStore):
 
 if __name__ == '__main__':
     appctxt = ApplicationContext()
-    window = MyApp()
+    window = ${app_name}()
     window.show()
     # This fixes the issue with PySide2 that the exec function is not found
     exec_func = getattr(appctxt.app, 'exec', appctxt.app.exec_)

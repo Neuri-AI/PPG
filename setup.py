@@ -3,9 +3,11 @@ import json
 from os.path import relpath, join
 from setuptools import setup, find_packages
 
+
 def _load_package_json():
     with open('package.json', 'r') as file:
         return json.loads(file.read())
+
 
 def _get_package_data(pkg_dir, data_subdir):
     result = []
@@ -15,14 +17,14 @@ def _get_package_data(pkg_dir, data_subdir):
             result.append(relpath(filepath, pkg_dir))
     return result
 
+
 PACKAGE = _load_package_json()
 
 setup(
     name='ppg',
     version=PACKAGE['version'],
     description=PACKAGE['description'],
-    long_description=
-        PACKAGE['description'] + '\n\nHome page: ',
+    long_description=PACKAGE['description'] + '\n\nHome page: ',
     author=PACKAGE['author'],
     author_email=PACKAGE['author_email'],
     url=PACKAGE['homepage'],
@@ -37,7 +39,7 @@ setup(
             'ppg/installer/mac', 'create-dmg'
         )
     },
-    install_requires=['PyInstaller==6.9.0'],
+    install_requires=['PyInstaller==6.9.0',"pydantic==2.11.7"],
     extras_require={
         'licensing': ['rsa>=3.4.2'],
         'sentry': ['sentry-sdk>=0.6.6'],
@@ -52,12 +54,22 @@ setup(
 
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules'
+
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ],
     entry_points={
         'console_scripts': ['ppg=ppg.__main__:_main']
     },
     license=PACKAGE['license'],
     keywords=PACKAGE['keywords'],
-    platforms=['MacOS', 'Windows', 'Debian', 'Fedora', 'CentOS', 'Arch', 'Raspbian'],
-    test_suite='tests'
+    platforms=['MacOS', 'Windows', 'Debian',
+               'Fedora', 'CentOS', 'Arch', 'Raspbian'],
+    test_suite='tests',
+    data_files=[
+        ('ppg/builtin_commands', ['package.json']),
+    ],
 )

@@ -1,6 +1,6 @@
 {
     "name": "ppg",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "description": "PPG: A powerful app generator simplifying development with Python and PyQt/PySide.",
     "license": "GPL-3.0-only",
     "author": "Luis Alfredo Reyes",

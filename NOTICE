@@ -1,6 +1,6 @@
 Python Package Generator (PPG)
 =======================
-Copyright (c) 2020 - 2021 Luis Alfredo De Los Reyes Andrade
+Copyright (c) 2020 - 2025 Luis Alfredo De Los Reyes Andrade
 
 ppg depends on several open source libraries and tools. This file describes
 which open source software is used, and under which terms. To see precisely how
@@ -12,7 +12,7 @@ for the software used under the respective license be made available.
 Python Package Generator (PPG)
 =====
 URL: https://github.com/runesc/PPG
-Version: 1.0.1
+Version: 1.2.0
 
 This project is based on the fbs library, originally developed by Michael Herrmann.
 fbs URL: https://github.com/mherrmann/fbs
