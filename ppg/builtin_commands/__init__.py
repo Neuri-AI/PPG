@@ -57,7 +57,7 @@ def init():
     Start a new project in the current directory
     """
     if exists('src'):
-        console.print("\n\n[bold red]Error:[/bold red] The src/ directory already exists.\nAborting. 💔")
+        console.print("\n\n💔 [bold red]Error:[/bold red] The src/ directory already exists.\nAborting. ")
         raise FbsError('')
 
     version = _load_package_json()["version"]
@@ -110,13 +110,18 @@ def init():
         console.print("[yellow]Aborted by user.[/yellow]")
         return
 
+    # check if binding is installed in the system and if not, install it
+    console.print(f"🔎 Checking if [bold cyan]{python_bindings}[/bold cyan] is installed[white]...[/white]")
+
+    if not _has_module(python_bindings):
+        _LOG.info(f"Installing {python_bindings}...")
+        console.print(f"🛠️ Installing [bold cyan]{python_bindings}[/bold cyan][white]...[/white]")
+        subprocess.run([sys.executable, '-m', 'pip', 'install', python_bindings])
+
     # Crear carpeta src/
     mkdir('src')
-
     template_dir = join(dirname(__file__), 'project_template')
-    def template_path(relpath):
-        return join(template_dir, *relpath.split('/'))
-
+    template_path = lambda relpath: join(template_dir, *relpath.split('/'))
     copy_with_filtering(
         template_dir, '.', {
             'app_name': app,
@@ -130,19 +135,18 @@ def init():
             template_path('src/main/python/main.py')
         ]
     )
+    with open('./src/build/settings/base.json', 'r') as file:
+        json_data = json.loads(file.read())
+        json_data['binding'] = python_bindings
+        json_data['version'] = version
+        json_data['hidden_imports'] = [
+            '__future__',
+        ]
+        file.close()
 
-    base_json_path = './src/build/settings/base.json'
-    with open(base_json_path, 'r') as file:
-        json_data = json.load(file)
-
-    json_data.update({
-        'binding': python_bindings,
-        'version': version,
-        'hidden_imports': []
-    })
-
-    with open(base_json_path, 'w') as file:
+    with open ('./src/build/settings/base.json', 'w') as file:
         json.dump(json_data, file, indent=4)
+        file.close()
 
     console.print(f"\n🎉 [bold green]Created the src/ directory 🎉.[/bold green] If you have [cyan]{python_bindings}[/cyan] installed, you can now do:\n\n    [bold]ppg start[/bold]")
 
@@ -217,7 +221,7 @@ def freeze(debug=False):
     if not _has_module('PyInstaller'):
         raise FbsError(
             "Could not find PyInstaller. Maybe you need to:\n"
-            "    pip install PyInstaller>=9.6.0"
+            "    pip install PyInstaller>=6.9.0"
         )
     version = SETTINGS['version']
     if not is_valid_version(version):
