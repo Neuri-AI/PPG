@@ -111,12 +111,14 @@ def init():
         return
 
     # check if binding is installed in the system and if not, install it
-    console.print(f"🔎 Checking if [bold cyan]{python_bindings}[/bold cyan] is installed[white]...[/white]")
+    console.print(f"\n🔎 Checking if [bold cyan]{python_bindings}[/bold cyan] is installed[white]...[/white]")
 
     if not _has_module(python_bindings):
         _LOG.info(f"Installing {python_bindings}...")
         console.print(f"🛠️ Installing [bold cyan]{python_bindings}[/bold cyan][white]...[/white]")
         subprocess.run([sys.executable, '-m', 'pip', 'install', python_bindings])
+
+    console.print(f"\n✅ [bold cyan]{python_bindings}[/bold cyan] is installed!")
 
     # Crear carpeta src/
     mkdir('src')
@@ -148,7 +150,7 @@ def init():
         json.dump(json_data, file, indent=4)
         file.close()
 
-    console.print(f"\n🎉 [bold green]Created the src/ directory 🎉.[/bold green] If you have [cyan]{python_bindings}[/cyan] installed, you can now do:\n\n    [bold]ppg start[/bold]")
+    console.print(f"\n🎉 [bold green]Created the src/ directory 🎉.[/bold green] If you have [bold cyan]{python_bindings}[/bold cyan] installed, you can now do:\n\n    [bold]ppg start[/bold]")
 
 @command
 def version():
@@ -216,7 +218,7 @@ def freeze(debug=False):
     """
     Compile your code to a standalone executable
     """
-    console.print("Freezing your app... This may take a while, please be patient. ⏳")
+    console.print("⏳ Freezing your app... \n\nThis may take a while, please be patient.")
     require_existing_project()
     if not _has_module('PyInstaller'):
         raise FbsError(
@@ -259,11 +261,9 @@ def freeze(debug=False):
                 freeze_linux(debug=debug)
         else:
             raise FbsError('Unsupported OS')
-    #! Change this
-    _LOG.info(
-        "Done. You can now run `%s`. If that doesn't work, see "
-        "https://github.com/runesc/PPG/issues to report the issue.", executable
-    )
+
+    console.print(f"\n🎉 [bold green]Your app was frozen successfully! 🎉[/bold green]\n\nYou can find the executable at: [cyan]{executable}[/cyan].\n\nIf that doesn't work, see https://github.com/Neuri-AI/PPG/issues to report the issue.")
+
 
 @command
 def sign():
@@ -288,7 +288,8 @@ def installer():
     """
     Create an installer for your app
     """
-    console.print("Creating installer... This may take a while, please be patient. ⏳")
+    console.print("⏳ Creating installer... \n\nThis may take a while, please be patient.")
+
     require_frozen_app()
     linux_distribution_not_supported_msg = \
         "Your Linux distribution is not supported, sorry. " \
