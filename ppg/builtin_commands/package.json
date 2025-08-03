@@ -1,0 +1,21 @@
+{
+    "name": "ppg",
+    "version": "1.1.1",
+    "description": "PPG: A powerful app generator simplifying development with Python and PyQt/PySide.",
+    "license": "GPL-3.0-only",
+    "author": "Luis Alfredo Reyes",
+    "author_email": "lualfredo@neuri.ai",
+    "homepage": "https://ppg.neuri.ai",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/runesc/PPG.git"
+    },
+    "keywords": [
+    "ppg",
+    "python",
+    "pyqt",
+    "pyside",
+    "app generator",
+    "redux"
+  ]
+}

@@ -25,19 +25,17 @@ setup(
     version=PACKAGE['version'],
     description=PACKAGE['description'],
     long_description=PACKAGE['description'] + '\n\nHome page: ',
+    long_description=PACKAGE['description'] + '\n\nHome page: ',
     author=PACKAGE['author'],
     author_email=PACKAGE['author_email'],
     url=PACKAGE['homepage'],
     packages=find_packages(exclude=('tests', 'tests.*')),
     package_data={
         'ppg': _get_package_data('ppg', '_defaults'),
-        'ppg.builtin_commands':
-            _get_package_data('ppg/builtin_commands', 'project_template'),
-        'ppg.builtin_commands._gpg':
-            ['Dockerfile', 'genkey.sh', 'gpg-agent.conf'],
-        'ppg.installer.mac': _get_package_data(
-            'ppg/installer/mac', 'create-dmg'
-        )
+        'ppg.builtin_commands': _get_package_data('ppg/builtin_commands', 'project_template'),
+        'ppg.builtin_commands._gpg': ['Dockerfile', 'genkey.sh', 'gpg-agent.conf'],
+        'ppg.installer.mac': _get_package_data('ppg/installer/mac', 'create-dmg'),
+        'ppg.builtin_commands': ['package.json'],
     },
     install_requires=['PyInstaller==6.9.0',"pydantic==2.11.7"],
     extras_require={
@@ -47,11 +45,8 @@ setup(
     },
     classifiers=[
         'Intended Audience :: Developers',
-
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-
         'Operating System :: OS Independent',
-
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules'
 
