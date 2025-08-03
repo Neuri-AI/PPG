@@ -61,7 +61,7 @@ def init():
         raise FbsError('')
 
     version = _load_package_json()["version"]
-    console.print(f"✨ Welcome to [bold green]PPG[/bold green] [blue]v{version}[/blue] ✨\n")
+    console.print(f"✨ Welcome to [bold green]PPG v{version}[/bold green] ✨\n")
     console.print("Let's create a new project! This will create a [bold]src/[/bold] directory with the necessary files and folders.\n")
 
     # Pedir datos con rich.prompt
