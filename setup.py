@@ -24,22 +24,22 @@ setup(
     name='ppg',
     version=PACKAGE['version'],
     description=PACKAGE['description'],
-    long_description=PACKAGE['description'] + '\n\nHome page: ',
+    long_description=PACKAGE['long_description'],
     author=PACKAGE['author'],
     author_email=PACKAGE['author_email'],
     url=PACKAGE['homepage'],
     packages=find_packages(exclude=('tests', 'tests.*')),
     package_data={
         'ppg': _get_package_data('ppg', '_defaults'),
-        'ppg.builtin_commands':
-            _get_package_data('ppg/builtin_commands', 'project_template'),
-        'ppg.builtin_commands._gpg':
-            ['Dockerfile', 'genkey.sh', 'gpg-agent.conf'],
-        'ppg.installer.mac': _get_package_data(
-            'ppg/installer/mac', 'create-dmg'
-        )
+        'ppg.builtin_commands': (
+            _get_package_data('ppg/builtin_commands', 'project_template')
+            + ['package.json']
+        ),
+        'ppg.builtin_commands._gpg': ['Dockerfile', 'genkey.sh', 'gpg-agent.conf'],
+        'ppg.installer.mac': _get_package_data('ppg/installer/mac', 'create-dmg'),
     },
-    install_requires=['PyInstaller==6.9.0',"pydantic==2.11.7"],
+    install_requires=['PyInstaller==6.9.0', "pydantic==2.11.7",
+                      "questionary==2.1.0", "rich==14.1.0"],
     extras_require={
         'licensing': ['rsa>=3.4.2'],
         'sentry': ['sentry-sdk>=0.6.6'],

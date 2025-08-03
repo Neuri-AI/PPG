@@ -57,11 +57,11 @@ def init():
     Start a new project in the current directory
     """
     if exists('src'):
-        console.print("\n\n[bold red]Error:[/bold red] The src/ directory already exists.\nAborting. 💔")
+        console.print("\n\n💔 [bold red]Error:[/bold red] The src/ directory already exists.\nAborting. ")
         raise FbsError('')
 
     version = _load_package_json()["version"]
-    console.print(f"✨ Welcome to [bold green]PPG[/bold green] [blue]v{version}[/blue] ✨\n")
+    console.print(f"✨ Welcome to [bold green]PPG v{version}[/bold green] ✨\n")
     console.print("Let's create a new project! This will create a [bold]src/[/bold] directory with the necessary files and folders.\n")
 
     # Pedir datos con rich.prompt
@@ -110,13 +110,20 @@ def init():
         console.print("[yellow]Aborted by user.[/yellow]")
         return
 
+    # check if binding is installed in the system and if not, install it
+    console.print(f"\n🔎 Checking if [bold cyan]{python_bindings}[/bold cyan] is installed[white]...[/white]")
+
+    if not _has_module(python_bindings):
+        _LOG.info(f"Installing {python_bindings}...")
+        console.print(f"🛠️ Installing [bold cyan]{python_bindings}[/bold cyan][white]...[/white]")
+        subprocess.run([sys.executable, '-m', 'pip', 'install', python_bindings])
+
+    console.print(f"\n✅ [bold cyan]{python_bindings}[/bold cyan] is installed!")
+
     # Crear carpeta src/
     mkdir('src')
-
     template_dir = join(dirname(__file__), 'project_template')
-    def template_path(relpath):
-        return join(template_dir, *relpath.split('/'))
-
+    template_path = lambda relpath: join(template_dir, *relpath.split('/'))
     copy_with_filtering(
         template_dir, '.', {
             'app_name': app,
@@ -130,21 +137,20 @@ def init():
             template_path('src/main/python/main.py')
         ]
     )
+    with open('./src/build/settings/base.json', 'r') as file:
+        json_data = json.loads(file.read())
+        json_data['binding'] = python_bindings
+        json_data['version'] = version
+        json_data['hidden_imports'] = [
+            '__future__',
+        ]
+        file.close()
 
-    base_json_path = './src/build/settings/base.json'
-    with open(base_json_path, 'r') as file:
-        json_data = json.load(file)
-
-    json_data.update({
-        'binding': python_bindings,
-        'version': version,
-        'hidden_imports': []
-    })
-
-    with open(base_json_path, 'w') as file:
+    with open ('./src/build/settings/base.json', 'w') as file:
         json.dump(json_data, file, indent=4)
+        file.close()
 
-    console.print(f"\n🎉 [bold green]Created the src/ directory 🎉.[/bold green] If you have [cyan]{python_bindings}[/cyan] installed, you can now do:\n\n    [bold]ppg start[/bold]")
+    console.print(f"\n🎉 [bold green]Created the src/ directory 🎉.[/bold green] If you have [bold cyan]{python_bindings}[/bold cyan] installed, you can now do:\n\n    [bold]ppg start[/bold]")
 
 @command
 def version():
@@ -212,12 +218,12 @@ def freeze(debug=False):
     """
     Compile your code to a standalone executable
     """
-    console.print("Freezing your app... This may take a while, please be patient. ⏳")
+    console.print("⏳ Freezing your app... \n\nThis may take a while, please be patient.")
     require_existing_project()
     if not _has_module('PyInstaller'):
         raise FbsError(
             "Could not find PyInstaller. Maybe you need to:\n"
-            "    pip install PyInstaller>=9.6.0"
+            "    pip install PyInstaller>=6.9.0"
         )
     version = SETTINGS['version']
     if not is_valid_version(version):
@@ -255,11 +261,9 @@ def freeze(debug=False):
                 freeze_linux(debug=debug)
         else:
             raise FbsError('Unsupported OS')
-    #! Change this
-    _LOG.info(
-        "Done. You can now run `%s`. If that doesn't work, see "
-        "https://github.com/runesc/PPG/issues to report the issue.", executable
-    )
+
+    console.print(f"\n🎉 [bold green]Your app was frozen successfully! 🎉[/bold green]\n\nYou can find the executable at: [cyan]{executable}[/cyan].\n\nIf that doesn't work, see https://github.com/Neuri-AI/PPG/issues to report the issue.")
+
 
 @command
 def sign():
@@ -284,7 +288,8 @@ def installer():
     """
     Create an installer for your app
     """
-    console.print("Creating installer... This may take a while, please be patient. ⏳")
+    console.print("⏳ Creating installer... \n\nThis may take a while, please be patient.")
+
     require_frozen_app()
     linux_distribution_not_supported_msg = \
         "Your Linux distribution is not supported, sorry. " \

@@ -30,7 +30,7 @@
 
 ## Install
 
-There ar 3 ways to install PPG:
+There are 3 ways to install PPG:
 
 - Install with PIP: `pip install ppg`
 - [Download the latest release](https://github.com/runesc/PPG/releases/)
@@ -334,22 +334,6 @@ Clean up the waste and configuration files that are generated when compiling an 
 ```bash
 ppg clean
 ```
-
-## 💖 Support PPG
-
-PPG is an open-source framework maintained by [Neuri](https://tu-sitio-web).
-It helps developers create modern desktop applications in Python with a clean architecture, global state management, and hybrid support for both native Qt and web-based interfaces.
-
-Maintaining and improving PPG takes time and resources.
-If you find this project useful, consider supporting its development with a donation.
-Your contribution helps keep PPG free and open for everyone.
-
-👉 **Donate here:**
-- [GitHub Sponsors](https://github.com/sponsors/tu_usuario)
-- [Patreon](https://patreon.com/tu_usuario)
-- [Buy Me a Coffee](https://buymeacoffee.com/tu_usuario)
-
-Thank you for supporting open source! 🙌
 
 
 
