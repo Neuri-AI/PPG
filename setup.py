@@ -39,7 +39,7 @@ setup(
         'ppg.installer.mac': _get_package_data('ppg/installer/mac', 'create-dmg'),
     },
     install_requires=['PyInstaller==6.9.0', "pydantic==2.11.7",
-                      "questionary==2.1.0", "rich==14.1.0"],
+                      "questionary==2.1.0", "rich==14.1.0", "watchdog==6.0.0", "astor==0.8.1"],
     extras_require={
         'licensing': ['rsa>=3.4.2'],
         'sentry': ['sentry-sdk>=0.6.6'],

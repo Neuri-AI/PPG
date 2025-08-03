@@ -13,23 +13,54 @@ from pydantic import ValidationError, create_model, BaseModel
 
 
 try:
-    from PySide6.QtCore import QObject, Signal, Slot
+    # PySide6
+    from PySide6.QtCore import QObject, Signal, Slot, QTimer, Qt, QRect, QUrl
+    from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QApplication, QVBoxLayout, QHBoxLayout, QMainWindow
     from PySide6.QtWebChannel import QWebChannel
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+
+    # Alias para QMainWindow si tu código la usa directamente desde QtWidgets
+    _QMainWindow = QMainWindow
+    # Para PySide6, los enums suelen ser de acceso directo (sin ámbito)
+    # No es necesario un alias especial para Qt a menos que lo quieras
+    _Qt = Qt
+
 except ImportError:
     try:
-        from PySide2.QtCore import QObject, Signal, Slot
+
+        from PySide2.QtCore import QObject, Signal, Slot, Qt
+        from PySide2.QtWidgets import QMainWindow
         from PySide2.QtWebChannel import QWebChannel
+
+        _QMainWindow = QMainWindow
+        _Qt = Qt
+
     except ImportError:
         try:
-            from PyQt6.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot
+
+            from PyQt6.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot, Qt
+
+            from PyQt6.QtWidgets import QMainWindow
             from PyQt6.QtWebChannel import QWebChannel
+
+            _QMainWindow = QMainWindow
+            _Qt = Qt
+
         except ImportError:
             try:
-                from PyQt5.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot
+
+                from PyQt5.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot, Qt
+                from PyQt5.QtWidgets import QMainWindow
                 from PyQt5.QtWebChannel import QWebChannel
+
+                _QMainWindow = QMainWindow
+                _Qt = Qt
+
             except ImportError:
                 raise ImportError(
-                    "No se encontró PySide6, PySide2, PyQt6 ni PyQt5 instalado")
+                    "No se encontró PySide6, PySide2, PyQt6 ni PyQt5 instalado."
+                    "Por favor, instala uno de estos: pip install PySide6 (o PySide2, PyQt6, PyQt5)"
+                )
 
 def init_lifecycle(cls):
     def __init__(self, *args, **kwargs):

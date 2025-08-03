@@ -109,7 +109,6 @@ Read the [Getting started](#getting-started) section for information, templates,
 #### Deprecation Notice
 - **Deprecated:** `PPGStore` is now marked as deprecated. Use **Pydux** instead.
   Backward compatibility is maintained for all v1.1.x versions, but `PPGStore` will be removed in a future major release.
-  A runtime warning is now displayed when `PPGStore` is used.
 
 ### 🎉 Native & Web UI Hybrid Applications
 
@@ -121,13 +120,19 @@ Read the [Getting started](#getting-started) section for information, templates,
 - **Web ↔ Python messaging:** Built-in event-driven messaging API enables smooth communication between web frontends and the Python backend 🎉
 - **Unified lifecycle & state management:** Both native and web UI components support the same component lifecycle and Pydux global state management, making your app consistent and reactive ✅
 
+### 🔥 New! Hot Reloading Engine
+- **Real-time hot reloading:** Instantly see code changes in components and views without restarting the app
+- **Automatic reloading:** Changes to Python files trigger automatic reloads of affected components, views, and the entire app ✨
+- **Developer productivity boost:** Shortens the feedback loop dramatically, enabling rapid iteration and testing ✅
+
 ### Summary
 
-This release transforms PPG into a full-fledged application platform where you can design **native Qt interfaces, web-based interfaces, or hybrid combinations** of both. The powerful Pydux state management system and seamless messaging APIs make it easy to build modern, reactive desktop apps with either UI style or both.
+This release transforms PPG into a full-fledged application platform where you can design **native Qt interfaces, web-based interfaces, or hybrid combinations** of both. The powerful Pydux state management system, seamless messaging APIs, and the new Hot Reloading Engine make it easy to build modern, reactive desktop apps with an efficient development workflow.
 
 #### Key highlights:
 - Design native Qt UI or modern web UI (HTML/CSS/JS) within the same framework
 - Hybrid app capabilities combining native widgets and web-based interfaces
+- Hot reloading engine for real-time development feedback
 - Type-safe global state management powered by Pydux and Pydantic
 - Developer experience improvements and cross-platform production readiness
 
