@@ -31,10 +31,13 @@ setup(
     packages=find_packages(exclude=('tests', 'tests.*')),
     package_data={
         'ppg': _get_package_data('ppg', '_defaults'),
-        'ppg.builtin_commands': _get_package_data('ppg/builtin_commands', 'project_template'),
-        'ppg.builtin_commands._gpg': ['Dockerfile', 'genkey.sh', 'gpg-agent.conf'],
-        'ppg.installer.mac': _get_package_data('ppg/installer/mac', 'create-dmg'),
-        'ppg.builtin_commands': ['package.json'],
+        'ppg.builtin_commands':
+            _get_package_data('ppg/builtin_commands', 'project_template'),
+        'ppg.builtin_commands._gpg':
+            ['Dockerfile', 'genkey.sh', 'gpg-agent.conf'],
+        'ppg.installer.mac': _get_package_data(
+            'ppg/installer/mac', 'create-dmg'
+        )
     },
     install_requires=['PyInstaller==6.9.0',"pydantic==2.11.7"],
     extras_require={

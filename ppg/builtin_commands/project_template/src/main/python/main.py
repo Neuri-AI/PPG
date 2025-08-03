@@ -14,9 +14,6 @@ class ${app_name}(QMainWindow, PPGLifeCycle, Pydux):
     def responsive_UI(self):
         self.setMinimumSize(640, 480)
 
-    def update_store(self, store):
-        pass
-
 
 if __name__ == '__main__':
     appctxt = ApplicationContext()
