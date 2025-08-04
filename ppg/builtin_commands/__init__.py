@@ -174,13 +174,13 @@ def create(type="component"):
     inherit_from = text("Inherit from", default=default_inherit).ask()
 
     template = Template(component_template)
-    code = template.substitute(Binding=binding, Name=name.capitalize(), Widget=inherit_from)
+    code = template.substitute(Binding=binding, Name=name, Widget=inherit_from)
 
     project_path = Path.cwd()
     path = project_path / "src" / "main" / "python" / f"{type_lower}s"
     path.mkdir(parents=True, exist_ok=True)
 
-    file_path = path / f"{name.capitalize()}.py"
+    file_path = path / f"{name}.py"
     if file_path.exists():
         if not confirm(f"The file [bold]{file_path.name}[/bold] already exists. Overwrite?").ask():
             console.print("[yellow]Creation aborted by user.[/yellow]")
@@ -189,7 +189,7 @@ def create(type="component"):
     with open(file_path, "w") as file:
         file.write(code)
 
-    console.print(f"[green]{type.capitalize()} [bold]{name.capitalize()}[/bold] created in: [cyan]{path}[/cyan][/green] ✅")
+    console.print(f"[green]{type.capitalize()} [bold]{name}[/bold] created in: [cyan]{path}[/cyan][/green] ✅")
 
 @command
 def start():

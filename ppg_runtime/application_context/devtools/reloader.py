@@ -10,164 +10,65 @@ from watchdog.events import FileSystemEventHandler
 from rich.console import Console
 
 try:
-    # PySide6
+
     from PySide6.QtCore import (
-        QObject, Signal, Slot, QTimer, Qt, QRect, QUrl, QSize, QPoint, QSizeF, QPointF
+        QObject, Signal, QTimer, Qt
     )
     from PySide6.QtWidgets import (
-        QLabel, QPushButton, QWidget, QApplication, QVBoxLayout, QHBoxLayout, QMainWindow,
-        QLineEdit, QTextEdit, QPlainTextEdit,  # Added QPlainTextEdit
-        QCheckBox, QRadioButton, QComboBox, QSlider, QProgressBar,
-        QTabWidget, QGroupBox, QFrame, QScrollArea, QSplitter,
-        QMenuBar, QMenu, QStatusBar, QToolBar, QToolButton,  # Added QToolButton
-        QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QTreeWidget, QTreeWidgetItem,
-        QDialog, QMessageBox, QFileDialog, QFontDialog, QColorDialog,
-        QWizard, QWizardPage,  # Added QWizard, QWizardPage
-        # Added calendar/date/time, spinbox, dial
-        QCalendarWidget, QDial, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit,
-        QMdiArea, QMdiSubWindow,  # Added MDI
-        QToolBox,  # Added QToolBox
-        QGridLayout, QFormLayout, QStackedWidget,
-        QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsTextItem
+        QLabel, QWidget, QApplication
     )
-    from PySide6.QtGui import (
-        QFont, QColor, QPen, QBrush, QIcon, QPixmap, QImage, QPainter,
-        # Added Graphics Item Types
-    )
-    from PySide6.QtWebChannel import QWebChannel
-    from PySide6.QtWebEngineWidgets import (
-        QWebEngineView
-    )
-
-    _QMainWindow = QMainWindow
-    _Qt = Qt  # Alias for consistent Qt enum access
 
 except ImportError:
     try:
-        # PySide2
         from PySide2.QtCore import (
-            QObject, Signal, Slot, QTimer, Qt, QRect, QUrl, QSize, QPoint, QSizeF, QPointF
+            QObject, Signal, QTimer, Qt
         )
         from PySide2.QtWidgets import (
-            QLabel, QPushButton, QWidget, QApplication, QVBoxLayout, QHBoxLayout, QMainWindow,
-            QLineEdit, QTextEdit, QPlainTextEdit,
-            QCheckBox, QRadioButton, QComboBox, QSlider, QProgressBar,
-            QTabWidget, QGroupBox, QFrame, QScrollArea, QSplitter,
-            QMenuBar, QMenu, QStatusBar, QToolBar, QToolButton,
-            QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QTreeWidget, QTreeWidgetItem,
-            QDialog, QMessageBox, QFileDialog, QFontDialog, QColorDialog,
-            QWizard, QWizardPage,
-            QCalendarWidget, QDial, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit,
-            QMdiArea, QMdiSubWindow,
-            QToolBox,
-            QGridLayout, QFormLayout, QStackedWidget,
-            QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsTextItem
+            QLabel, QWidget, QApplication
         )
-        from PySide2.QtGui import (
-            QFont, QColor, QPen, QBrush, QIcon, QPixmap, QImage, QPainter
-        )
-        from PySide2.QtWebChannel import QWebChannel
-        from PySide2.QtWebEngineWidgets import (
-            QWebEngineView
-        )
-
-        _QMainWindow = QMainWindow
-        _Qt = Qt
 
     except ImportError:
         try:
-            # PyQt6
-            # Note: PyQt6 often moves some classes (like QAction) to QtGui.
-            # QGraphicsItem types and QAction are in QtGui for PyQt6.
             from PyQt6.QtCore import (
-                QObject, pyqtSignal as Signal, pyqtSlot as Slot, QTimer, Qt, QRect, QUrl, QSize, QPoint, QSizeF, QPointF
+                QObject, pyqtSignal as Signal, QTimer, Qt
             )
             from PyQt6.QtWidgets import (
-                QLabel, QPushButton, QWidget, QApplication, QVBoxLayout, QHBoxLayout,
-                QMainWindow, QLineEdit, QTextEdit, QPlainTextEdit,
-                QCheckBox, QRadioButton, QComboBox, QSlider, QProgressBar,
-                QTabWidget, QGroupBox, QFrame, QScrollArea, QSplitter,
-                QMenuBar, QMenu, QStatusBar, QToolBar, QToolButton,
-                QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QTreeWidget, QTreeWidgetItem,
-                QDialog, QMessageBox, QFileDialog, QFontDialog, QColorDialog,
-                QWizard, QWizardPage,
-                QCalendarWidget, QDial, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit,
-                QMdiArea, QMdiSubWindow,
-                QToolBox,
-                QGridLayout, QFormLayout, QStackedWidget,
-                # Basic items might be here
-                QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsTextItem
+                QLabel, QWidget, QApplication
             )
-            from PyQt6.QtGui import (  # Additional classes commonly found in QtGui for PyQt6
-                # QAction here for PyQt6
-                QFont, QColor, QPen, QBrush, QIcon, QPixmap, QImage, QPainter,
-                # Ensure these are correct for PyQt6
-
-            )
-            from PyQt6.QtWebChannel import QWebChannel
-            from PyQt6.QtWebEngineWidgets import (
-                QWebEngineView
-            )
-
-            _QMainWindow = QMainWindow
-            _Qt = Qt  # Alias for consistent Qt enum access
 
         except ImportError:
             try:
-                # PyQt5
                 from PyQt5.QtCore import (
-                    QObject, pyqtSignal as Signal, pyqtSlot as Slot, QTimer, Qt, QRect, QUrl, QSize, QPoint, QSizeF, QPointF
+                    QObject, pyqtSignal as Signal, QTimer, Qt
                 )
                 from PyQt5.QtWidgets import (
-                    QLabel, QPushButton, QWidget, QApplication, QVBoxLayout, QHBoxLayout, QMainWindow,
-                    QLineEdit, QTextEdit, QPlainTextEdit,
-                    QCheckBox, QRadioButton, QComboBox, QSlider, QProgressBar,
-                    QTabWidget, QGroupBox, QFrame, QScrollArea, QSplitter,
-                    QMenuBar, QMenu,  QStatusBar, QToolBar, QToolButton,
-                    QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QTreeWidget, QTreeWidgetItem,
-                    QDialog, QMessageBox, QFileDialog, QFontDialog, QColorDialog,
-                    QWizard, QWizardPage,
-                    QCalendarWidget, QDial, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit,
-                    QMdiArea, QMdiSubWindow,
-                    QToolBox,
-                    QGridLayout, QFormLayout, QStackedWidget,
-                    QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsTextItem
+                    QLabel, QWidget, QApplication
                 )
-                from PyQt5.QtGui import (
-                    QFont, QColor, QPen, QBrush, QIcon, QPixmap, QImage, QPainter)
-                from PyQt5.QtWebChannel import QWebChannel
-                from PyQt5.QtWebEngineWidgets import (
-                    QWebEngineView
-                )
-
-                _QMainWindow = QMainWindow
-                _Qt = Qt
 
             except ImportError:
                 raise ImportError(
-                    "No se encontró PySide6, PySide2, PyQt6 ni PyQt5 instalado."
-                    "Por favor, instala uno de estos: pip install PySide6 (o PySide2, PyQt6, PyQt5)"
+                    "PySide6, PySide2, PyQt6, or PyQt5 not found."
+                    "Please install one of them: pip install PySide6 (or PySide2, PyQt6, PyQt5)"
                 )
 console = Console()
 
 
 def clear_console():
     """
-    Limpia la pantalla de la consola.
-    Funciona tanto en Windows ('cls') como en sistemas Unix/Linux/macOS ('clear').
+        Clears the console screen.
+        Works on both Windows ('cls') and Unix/Linux/macOS ('clear') systems.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
 class ReloadSignaler(QObject):
-    """Señal personalizada para emitir solicitudes de recarga de la UI."""
     reload_requested = Signal()
 
 
 class ReloadHandler(FileSystemEventHandler):
     """
-    Maneja eventos del sistema de archivos y emite una señal de recarga
-    cuando el archivo monitoreado es modificado.
+        Handles file system events and emits a reload signal
+        when the monitored file is modified.
     """
 
     def __init__(self, app_class_instance, target_file):
@@ -206,14 +107,13 @@ class ReloadHandler(FileSystemEventHandler):
 
 class PPGHotReloadMixin:
     """
-    Mixin genérico que añade capacidades de hot reload (basado en AST)
-    a cualquier clase PySide6/PPG.
+        Generic mixin that adds hot reload capabilities (based on AST)
+        to any PySide6/PPG class.
 
-    Para usarlo, la clase debe:
-    1. Heredar de PPGHotReloadMixin (usando el decorador @hot_reload_app).
-    2. Asegurarse de que el método _init_hot_reload_system() se llame una vez
-       al inicio de la aplicación.
-    3. Definir un método `render_()` que construya la UI.
+        To use it, the class must:
+        1. Inherit from PPGHotReloadMixin (using the @hot_reload_app decorator).
+        2. Ensure the _init_hot_reload_system() method is called once at the start of the application.
+        3. Define a `render_()` method that builds the UI.
     """
 
     _hot_reload_signaler = None
@@ -271,13 +171,18 @@ class PPGHotReloadMixin:
         if self.__class__._hot_reload_observer:
             return
         try:
-            folder = os.path.dirname(self.__class__.hot_reload_source_file)
+            # Get the directory of the source file
+            source_dir = os.path.dirname(self.__class__.hot_reload_source_file)
+
             event_handler = ReloadHandler(
                 self, self.__class__.hot_reload_source_file)
 
             self.__class__._hot_reload_observer = Observer()
+
+            # Monitor the root folder and all its subfolders.
             self.__class__._hot_reload_observer.schedule(
-                event_handler, path=folder, recursive=False)
+                event_handler, path=source_dir, recursive=True)
+
             self.__class__._hot_reload_observer.start()
 
         except Exception as e:
@@ -310,115 +215,30 @@ class PPGHotReloadMixin:
 
             if not class_node:
                 raise RuntimeError(
-                    f"No se encontró la clase '{class_name}' en el archivo fuente.")
+                    f"Class '{class_name}' not found in '{self.__class__.hot_reload_source_file}'.")
 
-            # Preparar un diccionario con todos los nombres y objetos necesarios
-            local_ns = {
-                # QtWidgets (Common Widgets & Layouts)
-                'QLabel': QLabel,
-                'QPushButton': QPushButton,
-                'QWidget': QWidget,
-                'QApplication': QApplication,
-                'QVBoxLayout': QVBoxLayout,
-                'QHBoxLayout': QHBoxLayout,
-                'QMainWindow': QMainWindow,
-                'QLineEdit': QLineEdit,
-                'QTextEdit': QTextEdit,
-                'QPlainTextEdit': QPlainTextEdit,
-                'QCheckBox': QCheckBox,
-                'QRadioButton': QRadioButton,
-                'QComboBox': QComboBox,
-                'QSlider': QSlider,
-                'QProgressBar': QProgressBar,
-                'QTabWidget': QTabWidget,
-                'QGroupBox': QGroupBox,
-                'QFrame': QFrame,
-                'QScrollArea': QScrollArea,
-                'QSplitter': QSplitter,
-                'QMenuBar': QMenuBar,
-                'QMenu': QMenu,
-                'QStatusBar': QStatusBar,
-                'QToolBar': QToolBar,
-                'QToolButton': QToolButton,
-                'QTableWidget': QTableWidget,
-                'QTableWidgetItem': QTableWidgetItem,
-                'QListWidget': QListWidget,
-                'QListWidgetItem': QListWidgetItem,
-                'QTreeWidget': QTreeWidget,
-                'QTreeWidgetItem': QTreeWidgetItem,
-                'QDialog': QDialog,
-                'QMessageBox': QMessageBox,
-                'QFileDialog': QFileDialog,
-                'QFontDialog': QFontDialog,
-                'QColorDialog': QColorDialog,
-                'QWizard': QWizard,
-                'QWizardPage': QWizardPage,
-                'QCalendarWidget': QCalendarWidget,
-                'QDial': QDial,
-                'QSpinBox': QSpinBox,
-                'QDoubleSpinBox': QDoubleSpinBox,
-                'QDateEdit': QDateEdit,
-                'QTimeEdit': QTimeEdit,
-                'QDateTimeEdit': QDateTimeEdit,
-                'QMdiArea': QMdiArea,
-                'QMdiSubWindow': QMdiSubWindow,
-                'QToolBox': QToolBox,
-                'QGridLayout': QGridLayout,
-                'QFormLayout': QFormLayout,
-                'QStackedWidget': QStackedWidget,
-                'QGraphicsView': QGraphicsView,
-                'QGraphicsScene': QGraphicsScene,
-                'QGraphicsRectItem': QGraphicsRectItem,
-                'QGraphicsEllipseItem': QGraphicsEllipseItem,
-                'QGraphicsTextItem': QGraphicsTextItem,
-                'QObject': QObject,
-                'Signal': Signal,
-                'Slot': Slot,
-                'QTimer': QTimer,
-                'Qt': _Qt,
-                'QRect': QRect,
-                'QUrl': QUrl,
-                'QSize': QSize,
-                'QPoint': QPoint,
-                'QSizeF': QSizeF,
-                'QPointF': QPointF,
-                'QFont': QFont,
-                'QColor': QColor,
-                'QPen': QPen,
-                'QBrush': QBrush,
-                'QIcon': QIcon,
-                'QPixmap': QPixmap,
-                'QImage': QImage,
-                'QPainter': QPainter,
-                'QWebEngineView': QWebEngineView,
-                # Add a reference to the instance itself for methods that need it
-                'self': self,
-            }
+            original_module = inspect.getmodule(self)
+            local_ns = dict(original_module.__dict__)
+            local_ns.update(globals())
+            local_ns['self'] = self
 
-            # Recompilar y reemplazar todos los métodos de la clase
+            # Rebuilld class and replace all methods
             for item in class_node.body:
                 if isinstance(item, ast.FunctionDef):
-                    # Genera el código para el método, incluyendo la definición 'def'
                     method_code = astor.to_source(item)
+                    exec(method_code, local_ns, local_ns)
 
-                    # Ejecuta el código en el namespace local. Esto crea la función.
-                    exec(method_code, globals(), local_ns)
-
-                    # Si la función fue creada, reemplaza el método en la instancia.
                     if item.name in local_ns:
                         new_method = types.MethodType(
                             local_ns[item.name], self)
                         setattr(self, item.name, new_method)
 
-            # Verificar si se encontró render_ después de procesar todos los métodos
             if not hasattr(self, 'render_'):
                 raise RuntimeError(
-                    f"No se encontró el método 'render_()' en la clase '{class_name}'.")
+                    f"render_() method not found in class '{class_name}'.")
 
             self._clear_hot_reloaded_widgets()
             QApplication.processEvents()
-
-            # Llama al nuevo método render_() para recrear los widgets.
             self.render_()
             self._ensure_children_visibility()
 
@@ -470,13 +290,13 @@ class PPGHotReloadMixin:
 
         for child_obj in self.children():
             if isinstance(child_obj, QWidget):
-                # Evita llamar show() en la propia ventana o la etiqueta de error si ya está gestionada
+                # Avoid calling show() on the window itself or the error label if it's already managed
                 if child_obj != self and \
                    (not hasattr(self, '_hot_reload_error_label') or child_obj != self._hot_reload_error_label):
                     if not child_obj.isVisible():
                         child_obj.show()
-                        # Si estás usando posicionamiento absoluto, `raise_()` también puede ayudar
-                        # a asegurar que el widget esté en la parte superior del orden de apilamiento.
+                        # If using absolute positioning, `raise_()` can also help
+                        # ensure the widget is at the top of the stacking order.
                         child_obj.raise_()
 
     def _show_hot_reload_error(self, message):

@@ -4,15 +4,12 @@ from $Binding.QtWidgets import $Widget
 
 @init_lifecycle
 class $Name($Widget, PPGLifeCycle, Pydux):
+
 	def component_will_mount(self):
 		self.subscribe_to_store(self)
 
 	def render_(self):
 		# Render the UI here
-		pass
-
-	def update_store(self, store):
-		# Handle Pydux store update here
 		pass
 
 """
