@@ -134,7 +134,7 @@ except ImportError:
                     QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsTextItem
                 )
                 from PyQt5.QtGui import (
-                    QFont, QColor, QPen, QBrush, QIcon, QPixmap, QImage, QPainter                )
+                    QFont, QColor, QPen, QBrush, QIcon, QPixmap, QImage, QPainter)
                 from PyQt5.QtWebChannel import QWebChannel
                 from PyQt5.QtWebEngineWidgets import (
                     QWebEngineView
@@ -301,7 +301,6 @@ class PPGHotReloadMixin:
                 source = f.read()
 
             tree = ast.parse(source)
-
             class_name = self.__class__.__name__
             class_node = None
             for node in tree.body:
@@ -313,18 +312,7 @@ class PPGHotReloadMixin:
                 raise RuntimeError(
                     f"No se encontró la clase '{class_name}' en el archivo fuente.")
 
-            render_func_node = None
-            for item in class_node.body:
-                if isinstance(item, ast.FunctionDef) and item.name == 'render_':
-                    render_func_node = item
-                    break
-
-            if not render_func_node:
-                raise RuntimeError(
-                    f"No se encontró el método 'render_()' en la clase '{class_name}'.")
-
-            render_code = astor.to_source(render_func_node)
-
+            # Preparar un diccionario con todos los nombres y objetos necesarios
             local_ns = {
                 # QtWidgets (Common Widgets & Layouts)
                 'QLabel': QLabel,
@@ -375,20 +363,14 @@ class PPGHotReloadMixin:
                 'QMdiArea': QMdiArea,
                 'QMdiSubWindow': QMdiSubWindow,
                 'QToolBox': QToolBox,
-
-                # Layouts
                 'QGridLayout': QGridLayout,
                 'QFormLayout': QFormLayout,
                 'QStackedWidget': QStackedWidget,
-
-                # Graphics View Framework
                 'QGraphicsView': QGraphicsView,
                 'QGraphicsScene': QGraphicsScene,
                 'QGraphicsRectItem': QGraphicsRectItem,
                 'QGraphicsEllipseItem': QGraphicsEllipseItem,
                 'QGraphicsTextItem': QGraphicsTextItem,
-
-                # QtCore (Basic Data Types & Utilities)
                 'QObject': QObject,
                 'Signal': Signal,
                 'Slot': Slot,
@@ -400,8 +382,6 @@ class PPGHotReloadMixin:
                 'QPoint': QPoint,
                 'QSizeF': QSizeF,
                 'QPointF': QPointF,
-
-                # QtGui (Graphics & Painting)
                 'QFont': QFont,
                 'QColor': QColor,
                 'QPen': QPen,
@@ -410,29 +390,37 @@ class PPGHotReloadMixin:
                 'QPixmap': QPixmap,
                 'QImage': QImage,
                 'QPainter': QPainter,
-
-                # QtWebEngineWidgets
-                'QWebEngineView': QWebEngineView
+                'QWebEngineView': QWebEngineView,
+                # Add a reference to the instance itself for methods that need it
+                'self': self,
             }
-            exec(render_code, globals(), local_ns)
 
-            if 'render_' not in local_ns:
+            # Recompilar y reemplazar todos los métodos de la clase
+            for item in class_node.body:
+                if isinstance(item, ast.FunctionDef):
+                    # Genera el código para el método, incluyendo la definición 'def'
+                    method_code = astor.to_source(item)
+
+                    # Ejecuta el código en el namespace local. Esto crea la función.
+                    exec(method_code, globals(), local_ns)
+
+                    # Si la función fue creada, reemplaza el método en la instancia.
+                    if item.name in local_ns:
+                        new_method = types.MethodType(
+                            local_ns[item.name], self)
+                        setattr(self, item.name, new_method)
+
+            # Verificar si se encontró render_ después de procesar todos los métodos
+            if not hasattr(self, 'render_'):
                 raise RuntimeError(
-                    "El código del método 'render_()' no pudo ser compilado o encontrado.")
-
-            new_render_method = types.MethodType(local_ns['render_'], self)
-            self.render_ = new_render_method
+                    f"No se encontró el método 'render_()' en la clase '{class_name}'.")
 
             self._clear_hot_reloaded_widgets()
-
             QApplication.processEvents()
 
             # Llama al nuevo método render_() para recrear los widgets.
             self.render_()
-
-            # --- NUEVO PASO: Asegurar la visibilidad de todos los nuevos widgets hijos ---
             self._ensure_children_visibility()
-            # --- FIN NUEVO PASO ---
 
             self.adjustSize()
             self.update()
