@@ -16,9 +16,11 @@
 PPG is a modern and powerful framework for building scalable desktop applications with Python and Qt. It offers a component-based architecture inspired by **React**, an advanced global state management system (**Pydux**), and seamless support for **hybrid interfaces** that combine native widgets with modern web UIs. With a comprehensive CLI and an innovative **hot-reloading engine**, PPG provides a complete and efficient workflow for developers.
 
 <p align="center">
-    <a href="https://ppg.neuri.ai/"><strong>Explore the docs »</strong></a>
+    <a href="https://ppg.neuri.ai/"><strong>Explore docs 📖</strong></a>  |  <a href="https://ppg.neuri.ai/"><strong> View examples 💻</strong></a>
 </p>
-
+<p align="center">
+    <a href="https://ppg.neuri.ai/"><strong> Explore v1 (classic) docs 🏛️</strong></a>
+</p>
 ---
 
 ### 🔥 Key Features
