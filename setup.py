@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 def _load_package_json():
-    with open('package.json', 'r') as file:
+    with open('package.json', 'r', encoding='utf-8') as file:
         return json.loads(file.read())
 
 
@@ -25,6 +25,7 @@ setup(
     version=PACKAGE['version'],
     description=PACKAGE['description'],
     long_description=PACKAGE['long_description'],
+    long_description_content_type='text/markdown',
     author=PACKAGE['author'],
     author_email=PACKAGE['author_email'],
     url=PACKAGE['homepage'],
