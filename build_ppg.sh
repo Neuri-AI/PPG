@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.2.0"
+VERSION="2.0.0"
 
 # copy package.json data to ppg/builtin_commands/
 echo "🔄 Actualizando datos del paquete en setup.py..."
