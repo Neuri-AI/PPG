@@ -233,7 +233,7 @@ class Pydux:
         Pydux._schema = create_model('DynamicStoreModel', **fields)
         Pydux._store = Pydux._schema()
 
-    def add_to_store(self, obj: Dict[str, Any]) -> None:
+    def update_store(self, obj: Dict[str, Any]) -> None:
         if Pydux._schema is None:
             # Sin esquema, actualizar dict simple
             if Pydux._store is None:
@@ -288,25 +288,25 @@ class Pydux:
                 **current_model_data.__dict__, **partial_data}
 
         # Actualizar usando el método principal
-        self.add_to_store({model_key: updated_model_data})
+        self.update_store({model_key: updated_model_data})
 
     def _notify_observers(self) -> None:
         for observer in Pydux._observers:
             if Pydux._schema is None:
                 # Sin schema, pasar dict directamente
-                observer.update_store(
+                observer.on_store_change(
                     Pydux._store if isinstance(Pydux._store, dict) else {})
             else:
                 # Con schema, usar model_dump
-                observer.update_store(
+                observer.on_store_change(
                     Pydux._store.model_dump() if Pydux._store else {})
 
     def subscribe_to_store(self, observer: Any) -> None:
-        if hasattr(observer, 'update_store') and callable(observer.update_store):
+        if hasattr(observer, 'on_store_change') and callable(observer.on_store_change):
             if observer not in Pydux._observers:  # Evitar duplicados
                 Pydux._observers.append(observer)
         else:
-            raise ValueError("Observer must have an 'update_store' method")
+            raise ValueError("Observer must have an 'on_store_change' method")
 
     def unsubscribe_from_store(self, observer: Any) -> None:
         if observer in Pydux._observers:
@@ -346,7 +346,7 @@ class Pydux:
 
     @store.setter
     def store(self, value: Dict[str, Any]) -> None:
-        self.add_to_store(value)
+        self.update_store(value)
 
     def clear_store(self) -> None:
         """Clear the store and reset it to an empty state."""
@@ -383,7 +383,7 @@ class Pydux:
             else:
                 raise KeyError(f"Key '{key}' not found in store")
 
-    def update_store(self, store: Dict[str, Any]) -> None:
+    def on_store_change(self, store: Dict[str, Any]) -> None:
         """This is a placeholder method to be overridden by subclasses.
         It can be used to update the store with new data.
 
