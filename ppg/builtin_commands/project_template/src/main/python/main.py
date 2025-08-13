@@ -2,6 +2,7 @@ import sys
 from ppg_runtime.application_context.${python_bindings} import ApplicationContext
 from ppg_runtime.application_context import PPGLifeCycle, Pydux, init_lifecycle
 from ppg_runtime.application_context.devtools.reloader import hot_reloading
+from ppg_runtime.application_context.utils import app_is_frozen
 from ${python_bindings}.QtWidgets import QMainWindow, QLabel
 
 # --------------------------------------------------------------------------------------
@@ -36,9 +37,8 @@ class ${app_name}(QMainWindow, PPGLifeCycle, Pydux):
 if __name__ == '__main__':
     appctxt = ApplicationContext()
     window = ${app_name}()
-
-    # This line starts the hot reloading system. REMOVE for production.
-    window._init_hot_reload_system(__file__)
+    if not app_is_frozen():
+        window._init_hot_reload_system(__file__)
     window.show()
     exec_func = getattr(appctxt.app, 'exec', appctxt.app.exec_)
     sys.exit(exec_func())

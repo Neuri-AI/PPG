@@ -7,6 +7,7 @@ from ppg_runtime._resources import ResourceLocator
 from ppg_runtime._signal import SignalWakeupHandler
 from ppg_runtime.excepthook import _Excepthook, StderrExceptionHandler
 from ppg_runtime.platform import is_windows, is_mac
+from ppg_runtime.application_context.utils import app_is_frozen as is_frozen
 from functools import lru_cache
 from typing import Dict, Type, Optional, Any, get_origin, get_args, Union
 from pydantic import ValidationError, create_model, BaseModel
@@ -14,7 +15,7 @@ from pydantic import ValidationError, create_model, BaseModel
 
 try:
     # PySide6
-    from PySide6.QtCore import QObject, Signal, Slot, QTimer, Qt, QRect, QUrl
+    from PySide6.QtCore import QObject, Signal, Slot, QTimer, Qt, QRect, QUrl, QTimer
     from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QApplication, QVBoxLayout, QHBoxLayout, QMainWindow
     from PySide6.QtWebChannel import QWebChannel
     from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -28,8 +29,8 @@ try:
 except ImportError:
     try:
 
-        from PySide2.QtCore import QObject, Signal, Slot, Qt
-        from PySide2.QtWidgets import QMainWindow
+        from PySide2.QtCore import QObject, Signal, Slot, Qt, QTimer
+        from PySide2.QtWidgets import QMainWindow, QApplication, QWidget
         from PySide2.QtWebChannel import QWebChannel
 
         _QMainWindow = QMainWindow
@@ -38,9 +39,9 @@ except ImportError:
     except ImportError:
         try:
 
-            from PyQt6.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot, Qt
+            from PyQt6.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot, Qt, QTimer
 
-            from PyQt6.QtWidgets import QMainWindow
+            from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget
             from PyQt6.QtWebChannel import QWebChannel
 
             _QMainWindow = QMainWindow
@@ -49,8 +50,8 @@ except ImportError:
         except ImportError:
             try:
 
-                from PyQt5.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot, Qt
-                from PyQt5.QtWidgets import QMainWindow
+                from PyQt5.QtCore import QObject, pyqtSignal as Signal, pyqtSlot as Slot, Qt, QTimer
+                from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget
                 from PyQt5.QtWebChannel import QWebChannel
 
                 _QMainWindow = QMainWindow
@@ -292,6 +293,8 @@ class Pydux:
 
     def _notify_observers(self) -> None:
         for observer in Pydux._observers:
+            if hasattr(observer, '_trigger_render') and callable(observer._trigger_render):
+                QTimer.singleShot(0, observer._trigger_render)
             if Pydux._schema is None:
                 # Sin schema, pasar dict directamente
                 observer.on_store_change(
@@ -535,6 +538,59 @@ class PPGLifeCycle:
         """
         return self._resource_locator.locate(*rel_path)
 
+    def _clear_widgets(self):
+        """
+            Clear all child widgets except for the main widget.
+        """
+        try:
+            for child_obj in self.findChildren(QWidget):
+                if child_obj != self:
+                    child_obj.deleteLater()
+            QApplication.processEvents()
+        except RuntimeError:
+            pass
+
+
+    def _ensure_children_visibility(self):
+        try:
+            # El código original se mantiene dentro del bloque 'try'
+            for child_obj in self.findChildren(QWidget):
+                child_obj.show()
+            self.adjustSize()
+            self.update()
+            self.repaint()
+        except RuntimeError as e:
+            # Se captura el error específico del objeto C++ eliminado.
+            # Al verificar el mensaje, nos aseguramos de no ocultar otros
+            # posibles errores de Runtime.
+            if 'already deleted' in str(e):
+                # Ignoramos el error de forma segura, ya que el re-renderizado
+                # ya ha creado los nuevos widgets. La ejecución simplemente
+                # se detiene aquí para este ciclo, evitando el crash.
+                pass
+            else:
+                # Si es otro RuntimeError, lo relanzamos para no ocultar problemas inesperados.
+                raise e
+
+    def _trigger_render(self):
+        """
+        Trigger a re-render of the component (for Pydux instances)
+        """
+        try:
+            # Todo el ciclo de vida se envuelve en el try
+            self._clear_widgets()
+            self.component_will_mount()
+            self.allow_bg()
+            self.render_()
+            self.responsive_UI()
+            self.component_did_mount()
+            self.set_CSS()
+
+            self._ensure_children_visibility()
+        except RuntimeError: pass
+        finally:
+            self.setUpdatesEnabled(True)
+
     @staticmethod
     def calc(a, b): return int((a * b) / 100.0)
 
@@ -662,14 +718,6 @@ class _ApplicationContext:
 
 _QtBinding = \
     namedtuple('_QtBinding', ('QApplication', 'QIcon', 'QAbstractSocket'))
-
-
-def is_frozen():
-    """
-    Return True if running from the frozen (i.e. compiled form) of your app, or
-    False when running from source.
-    """
-    return getattr(sys, 'frozen', False)
 
 
 def get_application_context(DevelopmentAppCtxtCls, FrozenAppCtxtCls=None):
