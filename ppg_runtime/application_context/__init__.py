@@ -11,7 +11,9 @@ from ppg_runtime.application_context.utils import app_is_frozen as is_frozen
 from functools import lru_cache
 from typing import Dict, Type, Optional, Any, get_origin, get_args, Union
 from pydantic import ValidationError, create_model, BaseModel
+from rich.console import Console
 
+console = Console()
 
 try:
     # PySide6
@@ -224,7 +226,7 @@ class Pydux:
             schema_dict (Dict[str, Type]): Dictionary with field names and their types.
         """
         if Pydux._schema is not None:
-            print("Warning: Schema already set. This will reset the store.")
+            console.print(f"\n\n⚠️ [bold yellow]WARNING[/bold yellow]: Schema already set. This will reset the store.\n\n", highlight=False)
 
         fields = {}
         for key, typ in schema_dict.items():

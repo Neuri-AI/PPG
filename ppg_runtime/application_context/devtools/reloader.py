@@ -1,4 +1,3 @@
-
 import os
 import time
 import ast
@@ -9,8 +8,6 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from rich.console import Console
 
-# Este bloque de código está para soportar las diferentes versiones de Qt.
-# No es necesario modificarlo.
 try:
     from PySide6.QtCore import (
         QObject, Signal, QTimer, Qt
@@ -47,6 +44,7 @@ except ImportError:
                     "PySide6, PySide2, PyQt6, or PyQt5 not found."
                     "Please install one of them: pip install PySide6 (or PySide2, PyQt6, PyQt5)"
                 )
+
 console = Console()
 
 
@@ -240,40 +238,58 @@ class PPGHotReloadMixin:
                     f"render_() method not found in class '{class_name}'.")
 
             self._clear_hot_reloaded_widgets()
-            QApplication.processEvents()
 
-            # Call render_() and handle exceptions to show the error
-            self._trigger_render()
-
-            self._ensure_children_visibility()
-
-            self.adjustSize()
-            self.update()
-            self.repaint()
-
-            if hasattr(self, '_hot_reload_error_label'):
-                self._hot_reload_error_label.hide()
+            # We use QTimer.singleShot to schedule the rendering in the next cycle of the event loop.
+            # This prevents the "Internal C++ object already deleted" error.
+            QTimer.singleShot(0, self._process_post_render_updates)
 
             console.print(
-                f"✨ [bold green]Hot Reload:[/bold green] Done.", highlight=False)
+                f"✨ [bold green]Hot Reload:[/bold green] Done. UI will update shortly.", highlight=False)
 
         except Exception as e:
-            # Este bloque solo se ejecuta si la excepción se propaga.
-            # Necesitas asegurarte de que _trigger_render no la silencie.
             console.print(
                 f"❌ [bold red]Hot Reload Error: UI can't be reloaded ->[/bold red] {str(e)}", highlight=False)
             import traceback
             traceback.print_exc()
             self._show_hot_reload_error(str(e))
 
+    def _process_post_render_updates(self):
+        """
+            Contains the rendering and UI update actions,
+            scheduled to run after the initial hot reload
+            has cleared the old widgets.
+        """
+        try:
+            self.component_will_mount()
+            self._trigger_render()
+            self._ensure_children_visibility()
+            self.adjustSize()
+            self.update()
+            self.repaint()
+
+            # Security check before attempting to hide the label
+            if hasattr(self, '_hot_reload_error_label'):
+                try:
+                    if self._hot_reload_error_label.parent() is not None:
+                        self._hot_reload_error_label.hide()
+                except RuntimeError:
+                    # C++ Object already deleted, ignore it
+                    pass
+        except Exception as e:
+            console.print(
+                f"❌ [bold red]Hot Reload Error: UI can't be reloaded ->[/bold red] {str(e)}", highlight=False)
+            import traceback
+            traceback.print_exc()
+            self._show_hot_reload_error(str(e))
+
+
     def _clear_hot_reloaded_widgets(self):
         widgets_to_delete = []
         for child_obj in self.children():
             if isinstance(child_obj, QWidget):
-                # Excluir explícitamente el widget de error si existe
-                if not hasattr(self, '_hot_reload_error_label') or child_obj is not self._hot_reload_error_label:
-                    if child_obj is not self:
-                        widgets_to_delete.append(child_obj)
+                is_error_label = hasattr(self, '_hot_reload_error_label') and child_obj is self._hot_reload_error_label
+                if child_obj is not self and not is_error_label:
+                    widgets_to_delete.append(child_obj)
 
         for widget in widgets_to_delete:
             try:
@@ -287,9 +303,10 @@ class PPGHotReloadMixin:
 
     def _ensure_children_visibility(self):
         """
-        Asegura que todos los QWidgets hijos directos de esta ventana
-        estén visibles, si no lo están ya. Esto es útil para refrescar
-        la UI después de un hot reload sin forzar `show()` en cada widget.
+        Ensures that all direct child QWidgets of this window
+        are visible, if they are not already. This is useful
+        for refreshing the UI after a hot reload without forcing
+        `show()` on each widget.
         """
 
         for child_obj in self.children():
@@ -304,12 +321,12 @@ class PPGHotReloadMixin:
                         child_obj.raise_()
 
     def _show_hot_reload_error(self, message):
-        # Esta es la parte más importante. Si el objeto de la etiqueta ya ha sido eliminado,
-        # lo creamos de nuevo para evitar el RuntimeError.
+        # This is the most important part. If the label object has already been deleted,
+        # create it again to avoid the RuntimeError.
         is_deleted = False
         if hasattr(self, '_hot_reload_error_label'):
             try:
-                # Comprobar si el widget todavía tiene un padre válido, si no, está eliminado
+                # Check if the widget still has a valid parent, if not, it's deleted
                 if self._hot_reload_error_label.parent() is None:
                     is_deleted = True
             except RuntimeError:
@@ -324,7 +341,7 @@ class PPGHotReloadMixin:
             self._hot_reload_error_label.setWordWrap(True)
             self._hot_reload_error_label.setAttribute(
                 Qt.WA_DeleteOnClose, False)
-        
+
         self._hot_reload_error_label.raise_()
         self._hot_reload_error_label.setText(
             f"❌ Hot Reload Error:\n{message}")
