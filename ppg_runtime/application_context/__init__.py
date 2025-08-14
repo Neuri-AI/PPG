@@ -9,8 +9,8 @@ from ppg_runtime.excepthook import _Excepthook, StderrExceptionHandler
 from ppg_runtime.platform import is_windows, is_mac
 from ppg_runtime.application_context.utils import app_is_frozen as is_frozen
 from functools import lru_cache
-from typing import Dict, Type, Optional, Any, get_origin, get_args, Union
-from pydantic import ValidationError, create_model, BaseModel
+from pydantic import BaseModel, create_model, ValidationError, Field
+from typing import Dict, Type, Any, Optional, Union, get_origin, get_args
 from rich.console import Console
 
 console = Console()
@@ -178,7 +178,6 @@ class Pydux:
             cls: The class to create an instance of.
             *args: Positional arguments to pass to the class constructor.
         """
-       # if cls is Pydux and cls._instance is not None:
         if cls is Pydux:
             if not cls._instance:
                 cls._instance = super(Pydux, cls).__new__(cls, *args, **kwargs)
@@ -188,6 +187,10 @@ class Pydux:
             return super(Pydux, cls).__new__(cls, *args, **kwargs)
 
     def _default_for_type(self, typ):
+        """
+            Gets a default value for a given type.
+            For BaseModel, it returns the class itself to use as a factory.
+        """
         if typ == int:
             return 0
         if typ == str:
@@ -210,12 +213,8 @@ class Pydux:
             return self._default_for_type(first_type)
 
         if isinstance(typ, type) and issubclass(typ, BaseModel):
-            defaults = {}
-            for name, field in typ.model_fields.items():
-                field_type = field.annotation
-                defaults[name] = self._default_for_type(field_type)
-            return typ(**defaults)
-
+            # Devolvemos la clase para que se use como default_factory
+            return typ
         return None
 
     def set_schema(self, schema_dict: Dict[str, Type]) -> None:
@@ -230,8 +229,12 @@ class Pydux:
 
         fields = {}
         for key, typ in schema_dict.items():
-            default = self._default_for_type(typ)
-            fields[key] = (Optional[typ], default)
+            # Para BaseModel, usamos default_factory. Para otros, usamos el valor.
+            if isinstance(typ, type) and issubclass(typ, BaseModel):
+                fields[key] = (Optional[typ], Field(default_factory=typ))
+            else:
+                default = self._default_for_type(typ)
+                fields[key] = (Optional[typ], default)
 
         Pydux._schema = create_model('DynamicStoreModel', **fields)
         Pydux._store = Pydux._schema()
@@ -274,41 +277,36 @@ class Pydux:
             raise ValueError("Store is empty")
 
         current_data = Pydux._store.model_dump()
-
-        if model_key not in current_data:
-            raise KeyError(f"Model key '{model_key}' not found in store")
+        if model_key not in current_data or current_data[model_key] is None:
+            raise KeyError(f"Model key '{model_key}' not found in store or is None")
 
         current_model_data = current_data[model_key]
-        if current_model_data is None:
-            raise ValueError(f"Model '{model_key}' is None, cannot update")
-
-        # Merge de datos actuales con los nuevos
         if isinstance(current_model_data, dict):
             updated_model_data = {**current_model_data, **partial_data}
         else:
-            # Si es un modelo Pydantic, convertirlo a dict primero
-            updated_model_data = {
-                **current_model_data.__dict__, **partial_data}
+            # If it is a Pydantic model, convert it to a dict first
+            updated_model_data = {**current_model_data.__dict__, **partial_data}
 
-        # Actualizar usando el método principal
+        # Update using the main method
         self.update_store({model_key: updated_model_data})
 
     def _notify_observers(self) -> None:
         for observer in Pydux._observers:
             if hasattr(observer, '_trigger_render') and callable(observer._trigger_render):
                 QTimer.singleShot(0, observer._trigger_render)
+
             if Pydux._schema is None:
-                # Sin schema, pasar dict directamente
+                # Without schema, pass dict directly
                 observer.on_store_change(
                     Pydux._store if isinstance(Pydux._store, dict) else {})
             else:
-                # Con schema, usar model_dump
+                # With schema, use model_dump
                 observer.on_store_change(
                     Pydux._store.model_dump() if Pydux._store else {})
 
     def subscribe_to_store(self, observer: Any) -> None:
         if hasattr(observer, 'on_store_change') and callable(observer.on_store_change):
-            if observer not in Pydux._observers:  # Evitar duplicados
+            if observer not in Pydux._observers:  # Prevent duplicates
                 Pydux._observers.append(observer)
         else:
             raise ValueError("Observer must have an 'on_store_change' method")
