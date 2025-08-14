@@ -9,42 +9,39 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from rich.console import Console
 
+# Este bloque de código está para soportar las diferentes versiones de Qt.
+# No es necesario modificarlo.
 try:
-
     from PySide6.QtCore import (
         QObject, Signal, QTimer, Qt
     )
     from PySide6.QtWidgets import (
-        QLabel, QWidget, QApplication
+        QLabel, QWidget, QApplication, QPushButton
     )
-
 except ImportError:
     try:
         from PySide2.QtCore import (
             QObject, Signal, QTimer, Qt
         )
         from PySide2.QtWidgets import (
-            QLabel, QWidget, QApplication
+            QLabel, QWidget, QApplication, QPushButton
         )
-
     except ImportError:
         try:
             from PyQt6.QtCore import (
                 QObject, pyqtSignal as Signal, QTimer, Qt
             )
             from PyQt6.QtWidgets import (
-                QLabel, QWidget, QApplication
+                QLabel, QWidget, QApplication, QPushButton
             )
-
         except ImportError:
             try:
                 from PyQt5.QtCore import (
                     QObject, pyqtSignal as Signal, QTimer, Qt
                 )
                 from PyQt5.QtWidgets import (
-                    QLabel, QWidget, QApplication
+                    QLabel, QWidget, QApplication, QPushButton
                 )
-
             except ImportError:
                 raise ImportError(
                     "PySide6, PySide2, PyQt6, or PyQt5 not found."
@@ -55,8 +52,8 @@ console = Console()
 
 def clear_console():
     """
-        Clears the console screen.
-        Works on both Windows ('cls') and Unix/Linux/macOS ('clear') systems.
+    Clears the console screen.
+    Works on both Windows ('cls') and Unix/Linux/macOS ('clear') systems.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -67,8 +64,8 @@ class ReloadSignaler(QObject):
 
 class ReloadHandler(FileSystemEventHandler):
     """
-        Handles file system events and emits a reload signal
-        when the monitored file is modified.
+    Handles file system events and emits a reload signal
+    when the monitored file is modified.
     """
 
     def __init__(self, app_class_instance, target_file):
@@ -107,13 +104,13 @@ class ReloadHandler(FileSystemEventHandler):
 
 class PPGHotReloadMixin:
     """
-        Generic mixin that adds hot reload capabilities (based on AST)
-        to any PySide6/PPG class.
+    Generic mixin that adds hot reload capabilities (based on AST)
+    to any PySide6/PPG class.
 
-        To use it, the class must:
-        1. Inherit from PPGHotReloadMixin (using the @hot_reload_app decorator).
-        2. Ensure the _init_hot_reload_system() method is called once at the start of the application.
-        3. Define a `render_()` method that builds the UI.
+    To use it, the class must:
+    1. Inherit from PPGHotReloadMixin (using the @hot_reload_app decorator).
+    2. Ensure the _init_hot_reload_system() method is called once at the start of the application.
+    3. Define a `render_()` method that builds the UI.
     """
 
     _hot_reload_signaler = None
@@ -155,7 +152,6 @@ class PPGHotReloadMixin:
         self._setup_hot_reload_file_watcher()
 
     def _setup_hot_reload_signals(self):
-
         if not self.__class__._hot_reload_signaler:
             self.__class__._hot_reload_signaler = ReloadSignaler()
             self.__class__._hot_reload_signaler.reload_requested.connect(
@@ -222,7 +218,13 @@ class PPGHotReloadMixin:
             local_ns.update(globals())
             local_ns['self'] = self
 
-            # Rebuilld class and replace all methods
+            # Re-execute all import statements from the source file
+            for node in tree.body:
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    import_code = astor.to_source(node)
+                    exec(import_code, local_ns, local_ns)
+
+            # Rebuild class and replace all methods
             for item in class_node.body:
                 if isinstance(item, ast.FunctionDef):
                     method_code = astor.to_source(item)
@@ -239,8 +241,10 @@ class PPGHotReloadMixin:
 
             self._clear_hot_reloaded_widgets()
             QApplication.processEvents()
-            self.render_()
-            self.responsive_UI()
+
+            # Call render_() and handle exceptions to show the error
+            self._trigger_render()
+
             self._ensure_children_visibility()
 
             self.adjustSize()
@@ -254,6 +258,8 @@ class PPGHotReloadMixin:
                 f"✨ [bold green]Hot Reload:[/bold green] Done.", highlight=False)
 
         except Exception as e:
+            # Este bloque solo se ejecuta si la excepción se propaga.
+            # Necesitas asegurarte de que _trigger_render no la silencie.
             console.print(
                 f"❌ [bold red]Hot Reload Error: UI can't be reloaded ->[/bold red] {str(e)}", highlight=False)
             import traceback
@@ -261,25 +267,22 @@ class PPGHotReloadMixin:
             self._show_hot_reload_error(str(e))
 
     def _clear_hot_reloaded_widgets(self):
-        deleted_count = 0
-
         widgets_to_delete = []
         for child_obj in self.children():
             if isinstance(child_obj, QWidget):
-                if child_obj != self and \
-                   (not hasattr(self, '_hot_reload_error_label') or child_obj != self._hot_reload_error_label):
-                    widgets_to_delete.append(child_obj)
+                # Excluir explícitamente el widget de error si existe
+                if not hasattr(self, '_hot_reload_error_label') or child_obj is not self._hot_reload_error_label:
+                    if child_obj is not self:
+                        widgets_to_delete.append(child_obj)
 
         for widget in widgets_to_delete:
             try:
                 widget.hide()
                 widget.setParent(None)
                 widget.deleteLater()
-                deleted_count += 1
             except Exception as e:
                 console.print(
                     f"[bold yellow]Hot Reload:[/bold yellow] ⚠️ WARNING: Failed to delete widget [bold cyan]{type(widget).__name__}[/bold cyan]: [red]{str(e)}[/red]", highlight=False)
-
         QApplication.processEvents()
 
     def _ensure_children_visibility(self):
@@ -301,7 +304,18 @@ class PPGHotReloadMixin:
                         child_obj.raise_()
 
     def _show_hot_reload_error(self, message):
-        if not hasattr(self, '_hot_reload_error_label'):
+        # Esta es la parte más importante. Si el objeto de la etiqueta ya ha sido eliminado,
+        # lo creamos de nuevo para evitar el RuntimeError.
+        is_deleted = False
+        if hasattr(self, '_hot_reload_error_label'):
+            try:
+                # Comprobar si el widget todavía tiene un padre válido, si no, está eliminado
+                if self._hot_reload_error_label.parent() is None:
+                    is_deleted = True
+            except RuntimeError:
+                is_deleted = True
+
+        if not hasattr(self, '_hot_reload_error_label') or is_deleted:
             self._hot_reload_error_label = QLabel(self)
             self._hot_reload_error_label.setGeometry(
                 50, self.height() - 120, self.width() - 100, 100)
@@ -310,11 +324,12 @@ class PPGHotReloadMixin:
             self._hot_reload_error_label.setWordWrap(True)
             self._hot_reload_error_label.setAttribute(
                 Qt.WA_DeleteOnClose, False)
-            self._hot_reload_error_label.raise_()
-
+        
+        self._hot_reload_error_label.raise_()
         self._hot_reload_error_label.setText(
             f"❌ Hot Reload Error:\n{message}")
         self._hot_reload_error_label.show()
+
 
     def cleanup_hot_reload_resources(self):
         try:
