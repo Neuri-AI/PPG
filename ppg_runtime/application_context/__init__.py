@@ -552,24 +552,23 @@ class PPGLifeCycle:
 
 
     def _ensure_children_visibility(self):
+        """
+        Ensure all child widgets are visible.
+
+        Raises:
+            RuntimeError: If a widget was already deleted.
+            e: If any other error occurs.
+        """
         try:
-            # El código original se mantiene dentro del bloque 'try'
             for child_obj in self.findChildren(QWidget):
                 child_obj.show()
             self.adjustSize()
             self.update()
             self.repaint()
         except RuntimeError as e:
-            # Se captura el error específico del objeto C++ eliminado.
-            # Al verificar el mensaje, nos aseguramos de no ocultar otros
-            # posibles errores de Runtime.
             if 'already deleted' in str(e):
-                # Ignoramos el error de forma segura, ya que el re-renderizado
-                # ya ha creado los nuevos widgets. La ejecución simplemente
-                # se detiene aquí para este ciclo, evitando el crash.
-                pass
+                raise RuntimeError("A widget was already deleted.")
             else:
-                # Si es otro RuntimeError, lo relanzamos para no ocultar problemas inesperados.
                 raise e
 
     def _trigger_render(self):

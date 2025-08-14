@@ -1,5 +1,5 @@
 @echo off
-set VERSION=2.0.0
+set VERSION=1.2.0
 
 echo 🔄 Actualizando datos del paquete en setup.py...
 copy package.json ppg\builtin_commands\ /Y

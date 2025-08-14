@@ -284,7 +284,7 @@ def sign():
         _LOG.info('This platform does not support signing frozen apps.')
 
 @command
-def installer():
+def installer(user=False):
     """
     Create an installer for your app
     """
@@ -305,7 +305,7 @@ def installer():
     msg_parts = ['Created %s.' % out_file]
     if is_windows():
         from ppg.installer.windows import create_installer_windows
-        create_installer_windows()
+        create_installer_windows(user_level=user)
     elif is_mac():
         from ppg.installer.mac import create_installer_mac
         create_installer_mac()
