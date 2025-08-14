@@ -239,7 +239,8 @@ class PPGHotReloadMixin:
 
             self._clear_hot_reloaded_widgets()
             QApplication.processEvents()
-            self._trigger_render()
+            self.render_()
+            self.responsive_UI()
             self._ensure_children_visibility()
 
             self.adjustSize()
