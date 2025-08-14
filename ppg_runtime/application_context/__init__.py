@@ -578,7 +578,6 @@ class PPGLifeCycle:
         try:
             # Todo el ciclo de vida se envuelve en el try
             self._clear_widgets()
-            self.component_will_mount()
             self.allow_bg()
             self.render_()
             self.responsive_UI()
