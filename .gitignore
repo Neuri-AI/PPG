@@ -6,5 +6,6 @@ ppg.egg-info/
 target/
 .DS_Store
 test/
+tests/
 test.py
 *.pyc

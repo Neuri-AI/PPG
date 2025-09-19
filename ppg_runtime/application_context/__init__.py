@@ -65,6 +65,7 @@ except ImportError:
                     "Por favor, instala uno de estos: pip install PySide6 (o PySide2, PyQt6, PyQt5)"
                 )
 
+
 def init_lifecycle(cls):
     def __init__(self, *args, **kwargs):
         super(cls, self).__init__(*args, **kwargs)
@@ -87,6 +88,7 @@ def cached_property(getter):
         https://build-system.fman.io/manual/#cached_property
     """
     return property(lru_cache()(getter))
+
 
 class WebEngineBridge(QObject):
     bridge = Signal(str)
@@ -127,6 +129,7 @@ class WebEngineBridge(QObject):
         message = json.dumps({"event": event, "payload": payload})
         self.bridge.emit(message)
 
+
 class BridgeManager:
     _instances = []
 
@@ -162,6 +165,179 @@ class BridgeManager:
         """Closes the bridge and removes it from the instances list."""
         self.webview.page().setWebChannel(None)
         BridgeManager._instances.remove(self)
+
+
+class ReactiveStoreDict(dict):
+    """
+    A reactive dictionary that automatically notifies dependent widgets of changes.
+
+    This class extends Python's built-in `dict` to add reactivity. It keeps track of which
+    widgets or components are 'listening' to specific keys. When a value is updated,
+    it only notifies the widgets that depend on that particular key,
+    optimizing the update process.
+
+    Attributes:
+        _deps (dict): A dictionary where keys are the store's keys and values are
+                      sets of widgets dependent on those keys.
+        _component (Any): A reference to the parent component that contains this store.
+        _tracking_widget (Any): The widget currently accessing a key; used to register
+                                dependencies.
+        _base_model (BaseModel): The underlying Pydantic model for data validation.
+    """
+
+    def __init__(self, base_model, parent_component):
+        """
+        Initializes the ReactiveStoreDict.
+
+        Args:
+            base_model: The base Pydantic model used for data validation.
+            parent_component: The component containing this store, used for context.
+        """
+        super().__init__(base_model.model_dump())
+        self._deps = {}
+        self._component = parent_component
+        self._tracking_widget = None
+        self._base_model = base_model
+
+    def __getitem__(self, key):
+        """
+        Retrieves an item from the dictionary.
+
+        If a widget is currently being tracked (i.e., it's in the process of being rendered
+        and needs to track its dependencies), this method registers it as a dependent
+        of the accessed key.
+        """
+        if self._tracking_widget:
+            self._deps.setdefault(key, set()).add(self._tracking_widget)
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        """
+        Sets a new value for a key in the dictionary.
+
+        This method updates both the internal dictionary and the underlying Pydantic model.
+        After the update, it calls `notify_key` to trigger updates for all dependent widgets.
+        """
+        super().__setitem__(key, value)
+        self._base_model = self._base_model.model_copy(update={key: value})
+        self.notify_key(key)
+
+    def track(self, widget):
+        """
+        Sets the current tracking widget.
+
+        This method is called by a component's rendering logic to indicate that the
+        given widget is about to access store keys and should be registered as a
+        dependent of any keys it reads.
+
+        Args:
+            widget: The widget to be tracked for dependencies.
+        """
+        self._tracking_widget = widget
+        return self
+
+    def notify_key(self, key):
+        """
+        Notifies all widgets dependent on a specific key about a change.
+
+        This method iterates through the set of widgets registered for the given key
+        and triggers their update method (`_update_from_store`), ensuring that only
+        the relevant parts of the UI are refreshed.
+
+        Args:
+            key: The key that has been updated.
+        """
+        if key not in self._deps:
+            return
+        for widget in self._deps[key]:
+            if hasattr(widget, "_update_from_store"):
+                widget._update_from_store(key)
+
+
+class ReactiveStoreDict(dict):
+    """
+    A reactive dictionary that automatically notifies dependent widgets of changes.
+
+    This class extends Python's built-in `dict` to add reactivity. It keeps track of which
+    widgets or components are 'listening' to specific keys. When a value is updated,
+    it only notifies the widgets that depend on that particular key,
+    optimizing the update process.
+
+    Attributes:
+        _deps (dict): A dictionary where keys are the store's keys and values are
+                      sets of widgets dependent on those keys.
+        _component (Any): A reference to the parent component that contains this store.
+        _tracking_widget (Any): The widget currently accessing a key; used to register
+                                dependencies.
+        _base_model (BaseModel): The underlying Pydantic model for data validation.
+    """
+    def __init__(self, base_model, parent_component):
+        """
+        Initializes the ReactiveStoreDict.
+
+        Args:
+            base_model: The base Pydantic model used for data validation.
+            parent_component: The component containing this store, used for context.
+        """
+        super().__init__(base_model.model_dump())
+        self._deps = {}
+        self._component = parent_component
+        self._tracking_widget = None
+        self._base_model = base_model
+
+    def __getitem__(self, key):
+        """
+        Retrieves an item from the dictionary.
+
+        If a widget is currently being tracked (i.e., it's in the process of being rendered
+        and needs to track its dependencies), this method registers it as a dependent
+        of the accessed key.
+        """
+        if self._tracking_widget:
+            self._deps.setdefault(key, set()).add(self._tracking_widget)
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        """
+        Sets a new value for a key in the dictionary.
+
+        This method updates both the internal dictionary and the underlying Pydantic model.
+        After the update, it calls `notify_key` to trigger updates for all dependent widgets.
+        """
+        super().__setitem__(key, value)
+        self._base_model = self._base_model.model_copy(update={key: value})
+        self.notify_key(key)
+
+    def track(self, widget):
+        """
+        Sets the current tracking widget.
+
+        This method is called by a component's rendering logic to indicate that the
+        given widget is about to access store keys and should be registered as a
+        dependent of any keys it reads.
+
+        Args:
+            widget: The widget to be tracked for dependencies.
+        """
+        self._tracking_widget = widget
+        return self
+
+    def notify_key(self, key):
+        """
+        Notifies all widgets dependent on a specific key about a change.
+
+        This method iterates through the set of widgets registered for the given key
+        and triggers their update method (`_update_from_store`), ensuring that only
+        the relevant parts of the UI are refreshed.
+
+        Args:
+            key: The key that has been updated.
+        """
+        if key not in self._deps:
+            return
+        for widget in self._deps[key]:
+            if hasattr(widget, "_update_from_store"):
+                widget._update_from_store(key)
 
 class Pydux:
     _instance = None
@@ -211,9 +387,8 @@ class Pydux:
         if get_origin(typ) == Union:
             first_type = get_args(typ)[0]
             return self._default_for_type(first_type)
-
         if isinstance(typ, type) and issubclass(typ, BaseModel):
-            # Devolvemos la clase para que se use como default_factory
+            # Return the class itself to use as default_factory
             return typ
         return None
 
@@ -229,7 +404,7 @@ class Pydux:
 
         fields = {}
         for key, typ in schema_dict.items():
-            # Para BaseModel, usamos default_factory. Para otros, usamos el valor.
+            # For BaseModel, use default_factory. For others, use the default value.
             if isinstance(typ, type) and issubclass(typ, BaseModel):
                 fields[key] = (Optional[typ], Field(default_factory=typ))
             else:
@@ -237,81 +412,98 @@ class Pydux:
                 fields[key] = (Optional[typ], default)
 
         Pydux._schema = create_model('DynamicStoreModel', **fields)
-        Pydux._store = Pydux._schema()
+        Pydux._store = ReactiveStoreDict(Pydux._schema(), self)
+
 
     def update_store(self, obj: Dict[str, Any]) -> None:
+        """
+        Updates the store with new values.
+
+        Args:
+            obj (Dict[str, Any]): Dictionary with changes.
+        """
         if Pydux._schema is None:
-            # Sin esquema, actualizar dict simple
+            # Without schema, update simple dict
             if Pydux._store is None:
                 Pydux._store = {}
             if isinstance(Pydux._store, dict):
                 Pydux._store.update(obj)
             else:
-                # Fallback si había un modelo antes
                 Pydux._store = obj
         else:
             try:
-                current_data = Pydux._store.model_dump() if Pydux._store else {}
+                # Use model_dump() from the base model to get nested data
+                # No need for the check if we always use ReactiveStoreDict
+                current_data = Pydux._store._base_model.model_dump()
                 combined = {**current_data, **obj}
                 validated = Pydux._schema(**combined)
-                Pydux._store = validated
+                
+                # If already ReactiveStoreDict, just update keys
+                for k, v in combined.items():
+                    Pydux._store[k] = v
+
             except ValidationError as e:
                 raise TypeError(f"Validation error: {e}")
+
+        # Notify reactive widgets
+        if isinstance(Pydux._store, ReactiveStoreDict):
+            for key in obj:
+                Pydux._store.notify_key(key)
 
         self._notify_observers()
 
     def update_nested_model(self, model_key: str, partial_data: Dict[str, Any]) -> None:
         """
-        Allows partial updates on nested models.
-        Example: store.update_nested_model("user", {"name": "New name"})
+        Performs a partial update on a nested Pydantic model within the store.
+
+        This is useful for updating specific fields of a complex object without
+        having to replace the entire object. It retrieves the current nested model,
+        merges the new data, and then updates the main store.
 
         Args:
-            model_key (str): Model key in the store to update.
-            partial_data (Dict[str, Any]): Partial data to update the model with.
+            model_key: The key of the nested model in the store.
+            partial_data: A dictionary with the fields to update in the nested model.
         """
         if Pydux._schema is None:
-            raise ValueError(
-                "Schema must be set before using update_nested_model")
-
+            raise ValueError("Schema must be set before using update_nested_model")
         if not Pydux._store:
             raise ValueError("Store is empty")
 
-        current_data = Pydux._store.model_dump()
-        if model_key not in current_data or current_data[model_key] is None:
-            raise KeyError(f"Model key '{model_key}' not found in store or is None")
+        current_model_instance = getattr(Pydux._store._base_model, model_key)
+        updated_model_instance = current_model_instance.model_copy(update=partial_data)
 
-        current_model_data = current_data[model_key]
-        if isinstance(current_model_data, dict):
-            updated_model_data = {**current_model_data, **partial_data}
-        else:
-            # If it is a Pydantic model, convert it to a dict first
-            updated_model_data = {**current_model_data.__dict__, **partial_data}
-
-        # Update using the main method
-        self.update_store({model_key: updated_model_data})
+        self.update_store({model_key: updated_model_instance})
 
     def _notify_observers(self) -> None:
+        """
+        Calls the `on_store_change` method of all subscribed observers.
+        Also invokes `_reconcile_widgets_state` if defined (PPGLifeCycle).
+        """
         for observer in Pydux._observers:
-            if hasattr(observer, '_trigger_render') and callable(observer._trigger_render):
-                QTimer.singleShot(0, observer._trigger_render)
+            if hasattr(observer, '_reconcile_widgets_state') and callable(observer._reconcile_widgets_state):
+                QTimer.singleShot(0, observer._reconcile_widgets_state)
 
             if Pydux._schema is None:
-                # Without schema, pass dict directly
-                observer.on_store_change(
-                    Pydux._store if isinstance(Pydux._store, dict) else {})
+                observer.on_store_change(Pydux._store if isinstance(Pydux._store, dict) else {})
             else:
-                # With schema, use model_dump
-                observer.on_store_change(
-                    Pydux._store.model_dump() if Pydux._store else {})
+                # CORRECTION: Pass the Pydantic instance directly
+                observer.on_store_change(Pydux._store._base_model)
 
     def subscribe_to_store(self, observer: Any) -> None:
+        """
+        Subscribes an observer to the store to receive updates.
+
+        Args:
+            observer: Any object that has an `on_store_change(store)` method.
+        """
         if hasattr(observer, 'on_store_change') and callable(observer.on_store_change):
-            if observer not in Pydux._observers:  # Prevent duplicates
+            if observer not in Pydux._observers:
                 Pydux._observers.append(observer)
         else:
             raise ValueError("Observer must have an 'on_store_change' method")
 
     def unsubscribe_from_store(self, observer: Any) -> None:
+        """Removes an observer from the store."""
         if observer in Pydux._observers:
             Pydux._observers.remove(observer)
         else:
@@ -329,7 +521,8 @@ class Pydux:
             return None
 
         keys = path.split('.')
-        current = Pydux._store.model_dump() if Pydux._schema else Pydux._store
+        # No need for the check if we always use ReactiveStoreDict
+        current = Pydux._store._base_model.model_dump()
 
         try:
             for key in keys:
@@ -343,24 +536,29 @@ class Pydux:
 
     @property
     def store(self) -> Dict[str, Any]:
+        """Getter for the store, always returns a dict."""
         if Pydux._schema is None:
             return Pydux._store if isinstance(Pydux._store, dict) else {}
-        return Pydux._store.model_dump() if Pydux._store else {}
+        # No need for the check if we always use ReactiveStoreDict
+        return Pydux._store._base_model.model_dump()
 
     @store.setter
     def store(self, value: Dict[str, Any]) -> None:
+        """Setter for the store."""
         self.update_store(value)
 
     def clear_store(self) -> None:
         """Clear the store and reset it to an empty state."""
         if Pydux._schema:
-            Pydux._store = Pydux._schema()
+            # CORRECTION: Always initialize the store as a ReactiveStoreDict
+            Pydux._store = ReactiveStoreDict(Pydux._schema(), self)
         else:
             Pydux._store = {}
         self._notify_observers()
 
     def has_key(self, key: str) -> bool:
-        """Check if a key exists in the store.
+        """
+        Check if a key exists in the store.
 
         Args:
             key (str): The key to check in the store.
@@ -369,7 +567,12 @@ class Pydux:
         return key in store_dict and store_dict[key] is not None
 
     def remove_from_store(self, key: str) -> None:
-        """Remove a key from the store, setting it to None if schema is used."""
+        """
+        Remove a key from the store, setting it to None if schema is used.
+
+        Args:
+            key (str): The key to remove.
+        """
         if Pydux._schema is None:
             if isinstance(Pydux._store, dict) and key in Pydux._store:
                 del Pydux._store[key]
@@ -377,21 +580,23 @@ class Pydux:
             else:
                 raise KeyError(f"Key '{key}' not found in store")
         else:
-            current_data = Pydux._store.model_dump() if Pydux._store else {}
+            # No need for the check if we always use ReactiveStoreDict
+            current_data = Pydux._store._base_model.model_dump()
             if key in current_data:
-                current_data[key] = None  # Set to None instead of deleting
-                validated = Pydux._schema(**current_data)
-                Pydux._store = validated
+                updated = {**current_data, key: None}
+                validated = Pydux._schema(**updated)
+                Pydux._store = ReactiveStoreDict(validated, self)
                 self._notify_observers()
             else:
                 raise KeyError(f"Key '{key}' not found in store")
 
     def on_store_change(self, store: Dict[str, Any]) -> None:
-        """This is a placeholder method to be overridden by subclasses.
-        It can be used to update the store with new data.
+        """
+        Placeholder method to override by subclasses.
+        Executes each time the store changes.
 
         Args:
-            store (Dict[str, Any]): The new data to update the store with.
+            store (Dict[str, Any]): The new state of the store.
         """
         pass
 
@@ -426,10 +631,19 @@ class PPGStore:
         else:
             raise KeyError(f"Key '{key}' not found in store")
 
-    def _notify_observers(self):
-        for observer in self._observers:
-            # Llama al método `update_store` de cada observador
-            observer.update_store(self._store)
+    def _notify_observers(self) -> None:
+        """
+        Calls the `on_store_change` method of all subscribed observers.
+        Also invokes `_reconcile_widgets_state` if defined (PPGLifeCycle).
+        """
+        for observer in Pydux._observers:
+            if hasattr(observer, '_reconcile_widgets_state') and callable(observer._reconcile_widgets_state):
+                QTimer.singleShot(0, observer._reconcile_widgets_state)
+
+            if Pydux._schema is None:
+                observer.on_store_change(Pydux._store if isinstance(Pydux._store, dict) else {})
+            else:
+                observer.on_store_change(Pydux._store._base_model)
 
     def subscribe_to_store(self, observer):
         if hasattr(observer, 'update_store') and callable(observer.update_store):
@@ -467,6 +681,7 @@ class PPGStore:
             self._notify_observers()
         else:
             raise ValueError("store must be a dictionary")
+
 
 class PPGLifeCycle:
     def component_will_mount(self): pass
@@ -550,7 +765,6 @@ class PPGLifeCycle:
         except RuntimeError:
             pass
 
-
     def _ensure_children_visibility(self):
         """
         Ensure all child widgets are visible.
@@ -585,12 +799,17 @@ class PPGLifeCycle:
             self.set_CSS()
 
             self._ensure_children_visibility()
-        except RuntimeError: pass
+        except RuntimeError:
+            pass
         finally:
             self.setUpdatesEnabled(True)
 
+    def _reconcile_widgets_state(self):
+        pass
+
     @staticmethod
     def calc(a, b): return int((a * b) / 100.0)
+
 
 class _ApplicationContext:
     """
