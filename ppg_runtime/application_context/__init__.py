@@ -1,4 +1,4 @@
-import sys
+import warnings
 import json
 import traceback
 from collections import namedtuple
@@ -12,6 +12,8 @@ from functools import lru_cache
 from pydantic import BaseModel, create_model, ValidationError, Field
 from typing import Dict, Type, Any, Optional, Union, get_origin, get_args
 from rich.console import Console
+
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 console = Console()
 
@@ -271,6 +273,7 @@ class ReactiveStoreDict(dict):
                                 dependencies.
         _base_model (BaseModel): The underlying Pydantic model for data validation.
     """
+
     def __init__(self, base_model, parent_component):
         """
         Initializes the ReactiveStoreDict.
@@ -339,6 +342,7 @@ class ReactiveStoreDict(dict):
             if hasattr(widget, "_update_from_store"):
                 widget._update_from_store(key)
 
+
 class Pydux:
     _instance = None
     _store = None
@@ -400,7 +404,8 @@ class Pydux:
             schema_dict (Dict[str, Type]): Dictionary with field names and their types.
         """
         if Pydux._schema is not None:
-            console.print(f"\n\n⚠️ [bold yellow]WARNING[/bold yellow]: Schema already set. This will reset the store.\n\n", highlight=False)
+            console.print(
+                f"\n\n⚠️ [bold yellow]WARNING[/bold yellow]: Schema already set. This will reset the store.\n\n", highlight=False)
 
         fields = {}
         for key, typ in schema_dict.items():
@@ -413,7 +418,6 @@ class Pydux:
 
         Pydux._schema = create_model('DynamicStoreModel', **fields)
         Pydux._store = ReactiveStoreDict(Pydux._schema(), self)
-
 
     def update_store(self, obj: Dict[str, Any]) -> None:
         """
@@ -437,7 +441,7 @@ class Pydux:
                 current_data = Pydux._store._base_model.model_dump()
                 combined = {**current_data, **obj}
                 validated = Pydux._schema(**combined)
-                
+
                 # If already ReactiveStoreDict, just update keys
                 for k, v in combined.items():
                     Pydux._store[k] = v
@@ -465,14 +469,26 @@ class Pydux:
             partial_data: A dictionary with the fields to update in the nested model.
         """
         if Pydux._schema is None:
-            raise ValueError("Schema must be set before using update_nested_model")
+            raise ValueError(
+                "Schema must be set before using update_nested_model")
         if not Pydux._store:
             raise ValueError("Store is empty")
 
-        current_model_instance = getattr(Pydux._store._base_model, model_key)
-        updated_model_instance = current_model_instance.model_copy(update=partial_data)
+        current_model_data = getattr(Pydux._store._base_model, model_key)
 
-        self.update_store({model_key: updated_model_instance})
+        # Si el valor es una instancia de Pydantic, usa model_copy
+        if isinstance(current_model_data, BaseModel):
+            updated_model_instance = current_model_data.model_copy(
+                update=partial_data)
+            self.update_store({model_key: updated_model_instance})
+
+        else:
+            if not isinstance(current_model_data, dict):
+                # Si no es un diccionario, lo convertimos
+                current_model_data = current_model_data
+
+            updated_model_data = {**current_model_data, **partial_data}
+            self.update_store({model_key: updated_model_data})
 
     def _notify_observers(self) -> None:
         """
@@ -484,7 +500,8 @@ class Pydux:
                 QTimer.singleShot(0, observer._reconcile_widgets_state)
 
             if Pydux._schema is None:
-                observer.on_store_change(Pydux._store if isinstance(Pydux._store, dict) else {})
+                observer.on_store_change(
+                    Pydux._store if isinstance(Pydux._store, dict) else {})
             else:
                 # CORRECTION: Pass the Pydantic instance directly
                 observer.on_store_change(Pydux._store._base_model)
@@ -600,6 +617,7 @@ class Pydux:
         """
         pass
 
+
 class PPGStore:
     _instance = None
     _store = {}
@@ -641,7 +659,8 @@ class PPGStore:
                 QTimer.singleShot(0, observer._reconcile_widgets_state)
 
             if Pydux._schema is None:
-                observer.on_store_change(Pydux._store if isinstance(Pydux._store, dict) else {})
+                observer.on_store_change(
+                    Pydux._store if isinstance(Pydux._store, dict) else {})
             else:
                 observer.on_store_change(Pydux._store._base_model)
 
