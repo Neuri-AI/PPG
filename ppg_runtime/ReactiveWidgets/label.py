@@ -13,21 +13,19 @@ except ImportError:
                 raise ImportError(
                     "No Qt bindings found. Install PySide6, PySide2, PyQt6 or PyQt5."
                 )
+
+
 class ReactiveLabel(QLabel):
     """
     Reactive QLabel connected to Pydux, including support for nested models.
-
-    Args:
-        parent: Parent widget that contains the store.
-        key: Key in the store (can be nested, e.g., "user.name").
-        placeholder: Optional placeholder text when value is empty.
-        onChange: Optional callback when the text changes.
     """
-    def __init__(self, parent, key: str, placeholder: str = "", onChange=None, **kwargs):
+
+    def __init__(self, parent, key: str = "", placeholder: str = "", text: str = "", onChange=None, **kwargs):
         super().__init__(parent, **kwargs)
         self._store_key = key
         self._parent = parent
         self._placeholder = placeholder
+        self._template_text = text
         self._onChange = onChange
 
         # Subscribe to store changes if parent supports it
@@ -40,26 +38,43 @@ class ReactiveLabel(QLabel):
     def _update_from_store(self):
         """
         Updates the QLabel text from the store.
-        Supports nested keys using get_nested().
         """
-        if hasattr(self._parent, "get_nested"):
-            value = self._parent.get_nested(self._store_key) or ""
+        if self._template_text:
+            # Get the entire store to use for formatting
+            if hasattr(self._parent, "store"):
+                store_data = self._parent.store
+            else:
+                # Fallback if no store is found
+                store_data = {}
+
+            try:
+                # Format the text with all values from the store
+                current_value = self._template_text.format(**store_data)
+            except KeyError:
+                # If a key in the template doesn't exist in the store
+                # This prevents the app from crashing.
+                current_value = self._template_text
         else:
-            value = str(self._parent.store.get(self._store_key, ""))
+            # Original logic for non-templated text
+            if hasattr(self._parent, "get_nested"):
+                current_value = self._parent.get_nested(self._store_key) or ""
+            else:
+                current_value = str(
+                    self._parent.store.get(self._store_key, ""))
 
         # Use placeholder if value is empty
-        if not value and self._placeholder:
-            value = self._placeholder
+        if not current_value and self._placeholder:
+            current_value = self._placeholder
 
-        if self.text() != str(value):
-            self.setText(str(value))
+        # Update text if it's different
+        if self.text() != str(current_value):
+            self.setText(str(current_value))
             self.adjustSize()
             if callable(self._onChange):
-                self._onChange(value)
+                self._onChange(current_value)
 
     def on_store_change(self, store):
         """
         Method automatically called when the store changes.
-        Simply refreshes the label text from the store.
         """
         self._update_from_store()
