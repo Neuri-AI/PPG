@@ -19,7 +19,7 @@ PPG is a modern and powerful framework for building scalable desktop application
     <a href="https://ppg.neuri.ai/"><strong>Explore docs 📖</strong></a>  |  <a href="https://ppg.neuri.ai/"><strong> View examples 💻</strong></a>
 </p>
 <p align="center">
-    <a href="https://ppg.neuri.ai/"><strong> Explore v1 (classic) docs 🏛️</strong></a>
+    <a href="https://ppg.neuri.ai/classic"><strong> Explore v1.1.2 (classic) docs 🏛️</strong></a>
 </p>
 
 ---
