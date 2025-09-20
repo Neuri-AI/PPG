@@ -23,8 +23,8 @@ class ReactiveLabel(QLabel):
         placeholder: Optional placeholder text when value is empty.
         onChange: Optional callback when the text changes.
     """
-    def __init__(self, parent, key: str, placeholder: str = "", onChange=None):
-        super().__init__(parent)
+    def __init__(self, parent, key: str, placeholder: str = "", onChange=None, **kwargs):
+        super().__init__(parent, **kwargs)
         self._store_key = key
         self._parent = parent
         self._placeholder = placeholder

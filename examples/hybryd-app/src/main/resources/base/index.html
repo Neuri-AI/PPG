@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Demo example</title>
+
+    <!-- Qt WebChannel script that enables communication between JavaScript and Python -->
+    <script src="./assets/js/webchannel.js"></script>
+</head>
+<body>
+    <h1>Hello world!</h1>
+    <p>This is a simple example of a hybrid application using PPG.</p>
+
+    <!-- Simple login form -->
+    <form>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br><br>
+
+        <!-- Button to send data to Python -->
+        <button type="button" id="test_button">Login</button>
+    </form>
+
+    <!-- Output area where the response from Python will be displayed -->
+    <p id="output"></p>
+
+
+    <script>
+        /*
+            This script sets up a communication bridge between JavaScript (frontend)
+            and Python (backend) using Qt's QWebChannel.
+            - JS can send messages/events to Python
+            - Python can emit signals/events to JS
+        */
+        new QWebChannel(qt.webChannelTransport, function (channel) {
+            // "bridge" is the object name registered in Python with BridgeManager
+            window.bridge = channel.objects.bridge;
+
+            // Listen for events emitted from Python → JavaScript
+            bridge.bridge.connect(function (message) {
+                const data = JSON.parse(message);
+                console.log("Event received from Python:", data.event, data.payload);
+            });
+
+            // Handle button click → send data to Python
+            document.getElementById("test_button").onclick = function () {
+                // Collect values from form fields
+                const username = document.getElementById("username").value;
+                const password = document.getElementById("password").value;
+
+                // Create payload with the collected data
+                let payload = { data: "Hello from Web!", username, password };
+
+                /*
+                    Send event "callback" to Python with the payload.
+                    - Python will handle this in handle_callback()
+                    - The response from Python is returned as a Promise
+                */
+                bridge.send(JSON.stringify({ event: "callback", payload: payload }))
+                    .then(responseJSON => {
+                        // Parse Python's response
+                        let response = JSON.parse(responseJSON);
+
+                        // Display success or error in the <p id="output">
+                        if (response.success) {
+                            document.getElementById("output").innerText = response.data;
+                        } else {
+                            document.getElementById("output").innerText = "Error: " + response.error;
+                        }
+                    });
+            };
+        });
+    </script>
+</body>
+</html>
