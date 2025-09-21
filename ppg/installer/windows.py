@@ -20,7 +20,7 @@ def create_installer_windows(user_level: bool = False):
     if user_level:
         replacement = (
             "Function .onInit\n"
-            "  ; Instalación a nivel de usuario\n"
+            "  ; User-level installation\n"
             f"  StrCpy $InstDir \"$LOCALAPPDATA\\\\{app_name}\"\n"
             "FunctionEnd"
         )
