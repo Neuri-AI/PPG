@@ -1,1 +1,2 @@
+recursive-include ppg/builtin_commands/project_template *
 include ppg/builtin_commands/package.json

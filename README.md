@@ -1,44 +1,8 @@
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-
 <p align="center">
-  <a href="#">
-     <img src="https://ik.imagekit.io/kummiktgaiq/ppg/logo_OE3b6z79V.png?updatedAt=1635261532682" alt="PPG Logo" width="50%">
-  </a>
+  <img src="https://ik.imagekit.io/kummiktgaiq/ppg/logo_OE3b6z79V.png?updatedAt=1635261532682" alt="PPG Logo" width="50%">
 </p>
 
 <h3 align="center">PPG - Python Package Generator</h3>
-
-<p align="center">
-  Sleek, intuitive, and powerful tool for faster and easier PyQt/PySide App development.
-  <br>
-  <a href="https://ppg.neuri.ai/"><strong>Explore PPG docs »</strong></a>
-  <br>
-</p>
-
-
-## Table of contents
-
-- [Install](#install)
-- [Status](#status)
-- [Changelog](#changelog)
-- [Getting started](#getting-started)
-- [CLI Usage](#using-the-cli)
-- [The Life Cycle of a component](#the-life-cycle-of-a-component)
-- [Creators](#creators)
-- [Copyright and license](#copyright-and-license)
-
-
-## Install
-
-There ar 3 ways to install PPG:
-
-- [Download the latest release](https://github.com/runesc/PPG/releases/)
-- Clone the repo: `git clone https://github.com/runesc/ppg.git`
-- Install with PIP: `pip install ppg`
-
-Read the [Getting started](#getting-started) section for information, templates, examples, and more.
-
-## Status
 
 ![GitHub Release](https://img.shields.io/github/v/release/runesc/PPG?include_prereleases&display_name=release&color=stable&link=https%3A%2F%2Fgithub.com%2Frunesc%2FPPG%2Freleases)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/runesc/PPG?color=%23ab7df8)
@@ -46,229 +10,191 @@ Read the [Getting started](#getting-started) section for information, templates,
 ![GitHub forks](https://img.shields.io/github/forks/runesc/PPG)
 ![GitHub stars](https://img.shields.io/github/stars/runesc/PPG)
 ![GitHub licence](	https://img.shields.io/github/license/runesc/PPG)
+![PyPI Downloads](https://static.pepy.tech/badge/ppg)
+
+
+PPG is a modern and powerful framework for building scalable desktop applications with Python and Qt. It offers a component-based architecture inspired by **React**, an advanced global state management system (**Pydux**), and seamless support for **hybrid interfaces** that combine native widgets with modern web UIs. With a comprehensive CLI and an innovative **hot-reloading engine**, PPG provides a complete and efficient workflow for developers.
+
+<p align="center">
+    <a href="https://staging.neuri.ai/docs/intro"><strong>Explore docs 📖</strong></a>  |  <a href="https://staging.neuri.ai/docs/category/examples"><strong> View examples 💻</strong></a>
+</p>
+<p align="center">
+    <a href="https://ppg.neuri.ai/"><strong> Explore v1.1.2 (classic) docs 🏛️</strong></a>
+</p>
+
+---
+
+### 🔥 Key Features
+
+* **Reactive Component Architecture**: Design your UI using a component-based React-style approach that guides each element through a lifecycle of initialization, rendering, and cleanup.
+* **Global State Management (Pydux)**: A robust, type-safe system (powered by Pydantic) for real-time communication between your components.
+* **Hybrid Support**: Seamlessly combine native Qt widgets with modern web UIs (React, Vue, etc.) within the same application.
+* **Hot Reloading Engine**: Boost your productivity with instant code reloads that let you see UI changes without restarting the app.
+* **Comprehensive CLI**: A command-line interface that automates your entire app lifecycle, from initialization to compilation and installer creation.
+
+---
+
+### 🚀 Quick Start
+
+The PPG workflow is simple and intuitive. Here’s how you can initialize, run, and compile your first application:
+
+```bash
+# 1. Install PPG using pip
+pip install ppg
+
+# 2. Initialize a new project with the CLI
+ppg init
+
+# 3. Run your application in development mode
+ppg start
+
+# 4. Compile your app into a standalone executable
+ppg freeze
+
+# 5. Create an installer for your application
+ppg installer
+```
+
+### 📖 Guide
+
+- [Installation](#installation)
+- [CLI Usage](#cli-usage)
+- [Component Architecture](#component-architecture)
+- [State Management with Pydux](#state-management-with-pydux)
+- [Hybrid Development (Web + Native)](#hybrid-development-web--native)
+- [Changelog](#changelog)
+- [License](#license)
+
+### Installation
+For best practices, we recommend using a virtual environment.
+
+1. **Create and activate your virtual environment**:
+```bash
+# With conda
+conda create -n my-env python=3.11 -y
+conda activate my-env
+
+# With virtualenv
+python -m venv venv
+
+# macOS/Linux:
+source venv/bin/activate
+
+# Windows:
+.\venv\Scripts\activate.bat
+```
+
+2. **Install PPG**:
+```bash
+pip install ppg
+```
+
+Alternatively, you can install the latest development version directly from GitHub:
+```bash
+pip install git+https://github.com/neuri-ai/PPG.git
+```
+
+Or clone the repository and install it locally:
+```bash
+git clone https://github.com/neuri-ai/PPG
+
+cd PPG
+
+python setup.py install
+```
+
+### CLI Usage
+
+The PPG CLI allows you to manage your project efficiently.
+
+| Command        | Description                                                                 |
+|----------------|-----------------------------------------------------------------------------|
+| `ppg init`     | Initializes a new project in the current directory with an interactive setup. |
+| `ppg start`    | Runs your application from the source code in development mode.             |
+| `ppg create`   | Creates a new component or view from templates, *maintaining* your project's structure. |
+| `ppg freeze`   | Compiles your code into a standalone executable for distribution.           |
+| `ppg installer`| Creates a user-friendly installer for your app (e.g., `.exe` on Windows, `.dmg` on macOS). |
+| `ppg test`     | Automatically runs the unit tests for your project.                         |
+| `ppg clean`    | Cleans up temporary and build files generated by PPG.                       |
+
+### Component Architecture
+
+Traditional Qt is event-driven, but it lacks a structured lifecycle for managing UI components at a high level. This can lead to complex, hard-to-maintain code as applications grow.
+
+PPG solves this with a well-defined, React-inspired component lifecycle. It provides clear hooks for every stage of a component's life, from creation to destruction. This allows you to write clean, predictable code by providing specific moments to:
+
+- **Mounting**: Set up a component and fetch initial data.
+- **Updating**: React to data changes and re-render the UI.
+- **Unmounting**: Clean up resources to prevent memory leaks.
+
+This architecture brings a modern and robust development experience to both native Qt widgets and hybrid web components.
+
+### State Management with Pydux
+
+Pydux is PPG's global state management system, inspired by JavaScript's Redux.
+It provides a type-safe, reactive way to manage application state across components. Pydux uses Pydantic for data validation and serialization, ensuring that your state is always consistent and reliable.
+
+- **Unified State**: Maintains a single global state that is shared across all your components.
+- **Type Safety**: Ensures that your state is always valid and adheres to defined schemas.
+- **Replaces PPGStore**: `PPGStore` has been deprecated. It is highly recommended to migrate to Pydux to leverage all of its features.
+
+### Hybrid Development (Web + Native)
+PPG supports hybrid development, allowing you to combine native Qt widgets with modern web UIs (like React or Vue) in the same application. This enables you to:
+- **Hybrid Interfaces**: Use native widgets for performance-critical parts of your app.
+- **Fluid Communication**: `WebEngineBridge` and `BridgeManager` provide a bidirectional messaging channel, allowing your web frontend and Python backend to communicate transparently.
+- **Total Synchronization**: Both native widgets and web components can use the same Pydux state management system, ensuring a consistent and reactive user experience.
 
 ## Changelog
 
+#### Compatibility & Core Fixes
 - Added compatibility with PySide6.2+ ✅
 - Fixed compatibility issue with PySide2 (PySide6 and Qt5 use `exec()`, while PySide2 uses `exec_()`) ✅
 - Fixed an issue that prevented maximizing the window when creating a new project ✅
 - Added compatibility with PyInstaller 6.9.0+ ✅
 - Fixed an issue where the `QApplication` singleton required destruction before creating a new instance of `QApplication` ✅
 - Fixed the `get_resource` method, which previously could not be used normally ✅
-- **New!** Added a new feature called Pydux, which manages a global state between components, allowing real-time communication between them 🎉
 - Fixed a compilation issue on macOS that prevented applications from compiling correctly due to Sparkle ✅
+- Fixed installer compatibility to support Apple Silicon ✅
+
+#### CLI & Project Management
 - Fixed an issue with the CLI in the component/view generator that occurred when the "views" or "components" folder did not exist within the project ✅
-- **New!** Components generated by the CLI now natively support Pydux 🎉
 - Updated icons ✅
+- Fixed `resources` folder not being created when running `ppg init` ✅
+- Fixed an issue where `ppg init` would fail due to a missing `src/build/settings/base.json` file on new projects ✅
+- Fixed an issue where application names were not properly converted to CamelCase when generating new projects ✅
+- Fixed an issue where `build_settings` could not be accessed in compiled applications and source projects ✅
 
+### 🎉 Major New Features: Pydux State Management
 
-## Getting started
-This section is a step-by-step overview of using the PPG tool for creating apps.
+- Revolutionary state management: Added **Pydux**, which manages a global state between components, allowing real-time communication between them 🎉
+- Components integration: Components generated by the CLI now natively support Pydux 🎉
 
-#### Overview
-- [Setup](#setup)
-- [Create a project](#create-a-project)
-- [Running the app](#running-the-app)
-- [Compile your app](#compile-your-app)
+#### New! Advanced Pydux Features
+- Type-safe state management: Full Pydantic integration with dynamic schema validation ✨
+- Nested model support: Complex data structures with automatic validation ✨
+- Partial updates: `update_nested_model()` method for efficient updates of nested objects ✨
+- Dot notation access: `get_nested()` method for intuitive data retrieval (e.g., `store.get_nested("user.name")`) ✨
+- Schema flexibility: Progressive typing - start with simple dicts, evolve to strict Pydantic models ✨
+- Production-ready validation: Runtime type checking with clear error messages ✨
 
-#### Setup
-There are many ways to install PPG but before installing it, we recommend creating a virtual environment with virtualenv or conda. We do not recommend installing it directly on your computer to avoid compatibility problems in future projects.
+#### Deprecation Notice
+- **Deprecated:** `PPGStore` is now marked as deprecated. Use **Pydux** instead.
+  Backward compatibility is maintained for all v1.1.x versions, but `PPGStore` will be removed in a future major release.
 
-##### Using Conda/Miniconda
-Run the following command to create your virtual environment:
+### 🎉 Native & Web UI Hybrid Applications
 
-```bash
-conda create -n YOUR_ENV_NAME python=3.X -y
-```
+#### New! Native and Web UI Integration
 
-Activate your virtual enviroment.
-```bash
-conda activate YOUR_ENV_NAME
-```
+- **WebEngineBridge:** Added `WebEngineBridge` and `BridgeManager` classes to simplify communication between Python and **web-based user interfaces** built with React, Vue, or plain HTML/CSS/JS 🎉
+- **Native and Web UI design:** With PPG, you can design fully **native Qt user interfaces** or create **modern web-based interfaces** that run inside your desktop app.
+- **Hybrid application support:** First-class support for **hybrid applications that seamlessly combine native Qt widgets and full web UIs** in the same app ✅
+- **Web ↔ Python messaging:** Built-in event-driven messaging API enables smooth communication between web frontends and the Python backend 🎉
+- **Unified lifecycle & state management:** Both native and web UI components support the same component lifecycle and Pydux global state management, making your app consistent and reactive ✅
 
-##### Using Virtualenv 
-
-```bash
-python -m venv venv
-```
-
-Activate your virtual enviroment.
-```bash
-# On Mac/Linux:
-source venv/bin/activate
-# On Windows:
-call venv\scripts\activate.bat
-```
-
-##### Installing PPG
-Now we need to install PPG.
-
-```bash
-# Using PIP
-pip install ppg
-
-# Using github repository
-pip install https://github.com/runesc/PPG.git
-
-# From source code
-curl -L -O https://github.com/runesc/PPG.git
-unzip PPG.zip
-cd PPG/
-python setup.py install
-```
-
-Great! You already have PPG installed, now you need to choose the Qt binding that you prefer in this case we will use PySide6.
-
-#### Create a project
-Creating a project is the easiest part of PPG, you just have to answer a few questions and that's it.
-
-```bash
-# Just write
-ppg init
-# Console displays: 
-PPG init v1.x.x
-
-App name [MyApp] : MyDemoApp
-Version [1.0.0] : 1.0.0
-Author [ppg] : you
-Please select your Qt binding [default: 'PySide6']: 1) PyQt5 or 2) PyQt6 or 3) PySide2 or 4) PySide6 [4] : 4
-Mac bundle identifier (eg. com.you.mydemoapp, optional):
-Created the src/ directory. If you have PySide6 installed, you can now
-do:
-
-    ppg run
-
-```
-
-#### Running the app
-<div class="alert alert-warning" role="alert">
-  Before running the app, we recommend that you have the qt binding that you will use installed.
-</div>
-
-
-As you can see, two folders *`src/`* and *`requirements/`* have been created later on we will see in detail what those folders do for now, focus on executing the application
-
-```bash
-# Just write
-ppg run
-```
-It's like magic!🎉🌌 You already have a template where you can start expressing your ideas with code.
-
-#### Compile your app
-We want to turn the source code of our app into a standalone executable that can be run on your users' computers. In the context of Python applications, this process is called "freezing".
-
-Use the following command to turn the app's source code into a standalone executable:
-
-```bash
-# Just write
-ppg freeze
-```
-This creates the folder *`target/YourApp/`*. You can copy this directory to any other computer (with the same OS as yours) and run the app there.
-
-Now we have generated a binary that can run on any PC as long as they use the same operating system (if you compile on Windows you can't run the app on Linux or MacOS) but we need an elegant way to distribute our apps because we can't send the app in zip and ask the user to unzip it and run for that we can choose an installer (*`setup.exe`* on Windows, *`.dmg`* on MacOS or *`.deb/.rpm/.pkg.tar.xz`* on Linux.
-
-<div class="alert alert-warning" role="alert">
-  If you use Windows first install <a href="http://nsis.sourceforge.net/Main_Page">NSIS</a> and add to the path.
-</div>
-
-To be able to generate an installer you just have to write the following command:
-
-```bash
-# Create a installer
-ppg installer
-```
-
-
-## Using the CLI
-PPG CLI is a command line interface tool used to initialize, develop, structure, and maintain Qt applications directly from a command shell.
-
-#### Overview
-- [ppg init](#ppg-init)
-- [ppg start](#ppg-start)
-- [ppg create](#ppg-create)
-- [ppg freeze](#ppg-freeze)
-- [ppg installer](#ppg-installer)
-- [ppg test](#ppg-test)
-- [ppg clean](#ppg-clean)
-
-#### ppg init
-Create an Python/Qt workspace.
-
-```bash
-ppg init
-```
-
-##### Description
-Create and initialize a new Python/Qt application that is the default project for a new workspace.
-
-Provides interactive prompts for initial configuration, such as binding to use, version, app name and more. All prompts can be allowed to be safely set by default.
-
-The new workspace folder is named *`src/`* specified and contains configuration files.
-
-By default, the files for a new starter application are placed in the *`src/`* folder.
-
-The configuration of the new application appears in the section of *`build/settings`* where the configuration file of the workspace *`base.json`* is located
-
-#### ppg start
-Builds and serves your app.
-```bash
-ppg start
-```
-
-#### ppg create
-Create a new component or view.
-
-```bash
-ppg create <element>
-```
-##### Description
-Add a new component to the workspace and configure the project to use it, it can be an empty widget (*`QWidget`*) or a simple component like a *`QPushButton`*.
-
-The CLI provides a simple interface where you can select the type of widget you want to work with and the type of component that will be created (*`view`* or *`component`*) and it is saved in its respective folder (*`components/`*/ or *`views/`*/).
-
-##### Arguments
-| Argument      | Description | Value type    |
-| :---          | :---        | :---          |
-| `<component>`|Select the type of component to be used (**view** or **component**).| `string`|
-
-
-#### ppg freeze
-Compile the source code and transform it into an executable file
-
-```bash
-ppg freeze [options]
-```
-
-##### Description
-Creates an executable file that can be used on any PC that uses the same operating system for which it was compiled.
-
-##### Options
-| Argument      | Description | Value type    |  Default value    |
-| :---          | :---        | :---          | :---          |
-| `--debug`| It shows a log in the compilation and when executing the app it shows the status in a terminal.| `boolean`|`false`|
-
-#### ppg installer
-<div class="alert alert-warning" role="alert">
-  <a href="http://nsis.sourceforge.net/Main_Page">NSIS</a> required if compiling on Windows.
-</div>
-
-Create a user-friendly installer that can be distributed in a classic way.
-
-```bash
-ppg installer
-```
-
-#### ppg test
-Automatically run the unit tests you put in `src/unittest/python`
-```bash
-ppg test
-```
-#### ppg clean
-Clean up the waste and configuration files that are generated when compiling an application.
-
-```bash
-ppg clean
-```
+### 🔥 New! Hot Reloading Engine
+- **Real-time hot reloading:** Instantly see code changes in components and views without restarting the app
+- **Automatic reloading:** Changes to Python files trigger automatic reloads of affected components, views, and the entire app ✨
+- **Developer productivity boost:** Shortens the feedback loop dramatically, enabling rapid iteration and testing ✅
 
 
 ## Creators
@@ -278,9 +204,17 @@ ppg clean
 - <https://twitter.com/Fredo_Dev>
 - <https://github.com/runesc>
 
+### Contributors
 
+I would like to thank the following people for their contributions to this project, your pull requests, bug reports, and suggestions have been invaluable:
 
+- **Kastakin** - <https://github.com/Kastakin>
+- **chenyulue** - <https://github.com/chenyulue>
+- **Abhinavreddy-B** - <https://github.com/Abhinavreddy-B>
+- **cccaballero** - <https://github.com/cccaballero>
+- **mkodes** - <https://github.com/mkodes>
+- **johnosbb** - <https://github.com/johnosbb>
 
-## Copyright and license
+### License
 
-Code and documentation copyright 2020–2024 the [PPG](#) Code released under the [GPL v3 License](#). Docs released under [Creative Commons](https://creativecommons.org/licenses/by/3.0/).
+Code and documentation copyright 2020–2025. [PPG](#) Code released under the [GPL v3 License](#). Docs released under [Creative Commons](https://creativecommons.org/licenses/by/3.0/).

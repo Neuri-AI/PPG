@@ -3,6 +3,12 @@ This module contains all of ppg's built-in commands. They are invoked when you
 run `ppg <command>` on the command line. But you are also free to import them in
 your Python build script and execute them there.
 """
+
+import logging
+import os
+import subprocess
+import sys
+import json
 from ppg import path, SETTINGS, activate_profile
 from ppg.builtin_commands._util import prompt_for_value, is_valid_version, \
     require_existing_project, update_json, require_frozen_app, require_installer
@@ -21,14 +27,16 @@ from unittest import TestSuite, TextTestRunner, defaultTestLoader
 from string import Template
 
 from ppg.builtin_commands.components import component_template
-
-import logging
-import os
-import subprocess
-import sys
-import json
+from questionary import select, text, confirm
+from prompt_toolkit.styles import Style
+from rich.console import Console
+from rich.prompt import Prompt, Confirm
+from rich.panel import Panel
+from rich.table import Table
+from pathlib import Path
 
 _LOG = logging.getLogger(__name__)
+console = Console()
 
 # load package.json in project root
 def _load_package_json():
@@ -36,31 +44,91 @@ def _load_package_json():
     with open(f'{PPG_PATH}/package.json', 'r') as file:
         return json.loads(file.read())
 
+def to_camel_case(app_name: str) -> str:
+    """
+    Converts an application name from snake_case or kebab-case format to CamelCase.
+    """
+    parts = app_name.strip().replace('-', ' ').replace('_', ' ').split()
+    return ''.join(word.capitalize() for word in parts)
+
 @command
 def init():
     """
     Start a new project in the current directory
     """
-    _LOG.info(f'PPG init v{_load_package_json()["version"]}\n')
     if exists('src'):
-        raise FbsError('The src/ directory already exists. Aborting.')
-    app = prompt_for_value('App name', default='MyApp')
-    version = prompt_for_value('Version', default='1.0.0')
-    user = getuser().title()
-    author = prompt_for_value('Author', default=user)
+        console.print("\n\n💔 [bold red]Error:[/bold red] The src/ directory already exists.\nAborting. ")
+        raise FbsError('')
 
-    #! Always ask to user which framework wants to use
-    python_bindings = prompt_for_value(
-        "Please select your Qt binding [default: 'PySide6']", choices=('PyQt5', 'PyQt6', 'PySide2', 'PySide6'), default='PySide6'
-    )
+    version = _load_package_json()["version"]
+    console.print(f"✨ Welcome to [bold green]PPG v{version}[/bold green] ✨\n")
+    console.print("Let's create a new project! This will create a [bold]src/[/bold] directory with the necessary files and folders.\n")
 
-    eg_bundle_id = 'com.%s.%s' % (
-        author.lower().split()[0], ''.join(app.lower().split())
+    # Pedir datos con rich.prompt
+    app = to_camel_case(Prompt.ask("App name", default="MyApp"))
+    version = Prompt.ask("Version", default="1.0.0")
+    try:
+        default_author = getuser().title()
+    except Exception:
+        default_author = "Unknown"
+    author = Prompt.ask("Author", default=default_author)
+
+    custom_style = Style([
+        ('qmark', 'fg:#ff00ff bold'),
+        ('question', 'fg:#00ffff bold'),
+        ('answer', 'fg:#00ffff bold'),
+        ('pointer', 'fg:#ffff00 bold'),
+        ('highlighted', 'fg:#2fe784 bold'),
+        ('selected', 'fg:#2fe784 bold'),
+    ])
+
+    python_bindings = select(
+        "Select your Qt binding [PyQt5/PyQt6/PySide2/PySide6] (PySide6):",
+        choices=["PyQt5", "PyQt6", "PySide2", "PySide6"],
+        default="PySide6",
+        style=custom_style
+    ).ask()
+
+
+    eg_bundle_id = f"com.{author.lower().split()[0]}.{''.join(app.lower().split())}"
+    mac_bundle_identifier = Prompt.ask(
+        f"Mac bundle identifier (e.g. {eg_bundle_id}, optional)",
+        default=eg_bundle_id,
+        show_default=False
     )
-    mac_bundle_identifier = prompt_for_value(
-        'Mac bundle identifier (eg. %s, optional)' % eg_bundle_id,
-        optional=True
-    )
+    if mac_bundle_identifier.strip() == "":
+        mac_bundle_identifier = None
+
+    # Mostrar resumen bonito con tabla
+    table = Table(title="Project Configuration", show_header=False, box=None)
+    table.add_row("App name:", f"[cyan]{app}[/cyan]")
+    table.add_row("Version:", f"[cyan]{version}[/cyan]")
+    table.add_row("Author:", f"[cyan]{author}[/cyan]")
+    table.add_row("Qt binding:", f"[cyan]{python_bindings}[/cyan]")
+    table.add_row("Mac bundle identifier:", f"[cyan]{mac_bundle_identifier or '(none)'}[/cyan]")
+
+    console.print(Panel(table, title="[bold]Please confirm your settings[/bold]", border_style="blue"))
+
+    if not Confirm.ask("Continue?"):
+        console.print("[yellow]Aborted by user.[/yellow]")
+        return
+
+    # check if binding is installed in the system and if not, install it
+    console.print(f"\n🔎 Checking if [bold cyan]{python_bindings}[/bold cyan] is installed[white]...[/white]")
+
+    if not _has_module(python_bindings):
+        _LOG.info(f"Installing {python_bindings}...")
+        console.print(f"🛠️ Installing [bold cyan]{python_bindings}[/bold cyan][white]...[/white]")
+
+        try:
+            subprocess.run([sys.executable, '-m', 'pip', 'install', python_bindings], check=True)
+        except subprocess.CalledProcessError as e:
+            console.print(f"[red]❌ Failed to install [bold cyan]{python_bindings}[/bold cyan]. Please check your internet connection and permissions, and try again.[/red]")
+            return
+
+    console.print(f"\n✅ [bold cyan]{python_bindings}[/bold cyan] is installed!")
+
+    # Crear carpeta src/
     mkdir('src')
     template_dir = join(dirname(__file__), 'project_template')
     template_path = lambda relpath: join(template_dir, *relpath.split('/'))
@@ -81,53 +149,55 @@ def init():
         json_data = json.loads(file.read())
         json_data['binding'] = python_bindings
         json_data['version'] = version
-        json_data['hidden_imports'] = []
+        json_data['hidden_imports'] = [
+            '__future__',
+        ]
         file.close()
 
     with open ('./src/build/settings/base.json', 'w') as file:
         json.dump(json_data, file, indent=4)
         file.close()
 
-    _LOG.info(
-        "Created the src/ directory. If you have %s installed, you can now "
-        "do:\n\n    ppg start", python_bindings
-    )
+    console.print(f"\n🎉 [bold green]Created the src/ directory 🎉.[/bold green] If you have [bold cyan]{python_bindings}[/bold cyan] installed, you can now do:\n\n    [bold]ppg start[/bold]")
 
 @command
-def version(): _LOG.info(f'PPG init v{_load_package_json()["version"]}\n')
+def version():
+    """Show current PPG version"""
+    ver = _load_package_json()["version"]
+    console.print(f"[bold green]PPG init v{ver}[/bold green]")
 
 @command
 def create(type="component"):
-    if type.lower() == "component" or type.lower() == "view":
-        # Get necessary information
-        name = prompt_for_value("Component name")
-        with open("./src/build/settings/base.json", 'r') as file:
-            binding = json.loads(file.read())['binding']
-            file.close()
-        inherit_from = prompt_for_value("Inherit from", default="QWidget" if binding == "PySide6" or binding == "PySide2" else "QtWidget")
+    type_lower = type.lower()
+    if type_lower not in ("component", "view"):
+        console.print("[bold red][Error][/bold red]: The selected component type is invalid")
+        raise FbsError("Invalid component type")
 
-        # Build the component code
-        template = Template(component_template)
-        code = template.substitute(Binding=binding, Name=name.capitalize(), Widget=inherit_from)
+    name = to_camel_case(text("Component name",).ask())
 
-        # get absolute path (where the project is located using os
-        project_path = os.path.abspath(os.getcwd())
-        PATH = f"{project_path}/src/main/python/{type.lower()}s"
+    with open("./src/build/settings/base.json", 'r') as file:
+        binding = json.load(file)['binding']
 
-        _LOG.info(f"Creating component {name.capitalize()} in {PATH}")
+    default_inherit = "QWidget" if binding in ("PySide6", "PySide2") else "QtWidget"
+    inherit_from = text("Inherit from", default=default_inherit).ask()
 
-        # if the folder doesn't exist, create it
-        if not os.path.exists(PATH):
-            os.makedirs(PATH)
+    template = Template(component_template)
+    code = template.substitute(Binding=binding, Name=name, Widget=inherit_from)
 
-        # Write the code to the file
-        with open(f"{PATH}/{name.capitalize()}.py", "w") as file:
-            file.write(code)
-            file.close()
+    project_path = Path.cwd()
+    path = project_path / "src" / "main" / "python" / f"{type_lower}s"
+    path.mkdir(parents=True, exist_ok=True)
 
-        _LOG.info("Component created!")
-    else:
-        raise FbsError("[Error]: The selected component type is invalid")
+    file_path = path / f"{name}.py"
+    if file_path.exists():
+        if not confirm(f"The file [bold]{file_path.name}[/bold] already exists. Overwrite?").ask():
+            console.print("[yellow]Creation aborted by user.[/yellow]")
+            return
+
+    with open(file_path, "w") as file:
+        file.write(code)
+
+    console.print(f"[green]{type.capitalize()} [bold]{name}[/bold] created in: [cyan]{path}[/cyan][/green] ✅")
 
 @command
 def start():
@@ -156,11 +226,12 @@ def freeze(debug=False):
     """
     Compile your code to a standalone executable
     """
+    console.print("⏳ Freezing your app... \n\nThis may take a while, please be patient.")
     require_existing_project()
     if not _has_module('PyInstaller'):
         raise FbsError(
             "Could not find PyInstaller. Maybe you need to:\n"
-            "    pip install PyInstaller>=9.6.0"
+            "    pip install PyInstaller>=6.9.0"
         )
     version = SETTINGS['version']
     if not is_valid_version(version):
@@ -198,11 +269,9 @@ def freeze(debug=False):
                 freeze_linux(debug=debug)
         else:
             raise FbsError('Unsupported OS')
-    #! Change this
-    _LOG.info(
-        "Done. You can now run `%s`. If that doesn't work, see "
-        "https://github.com/runesc/PPG/issues to report the issue.", executable
-    )
+
+    console.print(f"\n🎉 [bold green]Your app was frozen successfully! 🎉[/bold green]\n\nYou can find the executable at: [cyan]{executable}[/cyan].\n\nIf that doesn't work, see https://github.com/Neuri-AI/PPG/issues to report the issue.")
+
 
 @command
 def sign():
@@ -223,10 +292,12 @@ def sign():
         _LOG.info('This platform does not support signing frozen apps.')
 
 @command
-def installer():
+def installer(user=False):
     """
     Create an installer for your app
     """
+    console.print("⏳ Creating installer... \n\nThis may take a while, please be patient.")
+
     require_frozen_app()
     linux_distribution_not_supported_msg = \
         "Your Linux distribution is not supported, sorry. " \
@@ -242,7 +313,7 @@ def installer():
     msg_parts = ['Created %s.' % out_file]
     if is_windows():
         from ppg.installer.windows import create_installer_windows
-        create_installer_windows()
+        create_installer_windows(user_level=user)
     elif is_mac():
         from ppg.installer.mac import create_installer_mac
         create_installer_mac()

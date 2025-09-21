@@ -1,11 +1,11 @@
-.DS_Store
+__pycache__/
 build/
-src/
 dist/
 ppg.egg-info/
 .vscode/
 target/
-test.py
-buid_and_run.sh
+.DS_Store
 test/
-__pycache__/
+tests/
+test.py
+*.pyc
