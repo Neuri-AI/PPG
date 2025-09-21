@@ -86,7 +86,7 @@ def is_kde_based():
     return gdmsession.startswith('kde')
 
 def _get_os_release_name():
-    with open('/etc/os-release', 'r') as f:
+    with open('/etc/os-release', 'r', encoding='utf-8') as f:
         for line in f:
             line = line.rstrip()
             if line.startswith('NAME='):

@@ -41,7 +41,7 @@ console = Console()
 # load package.json in project root
 def _load_package_json():
     PPG_PATH = os.path.dirname(os.path.abspath(__file__))
-    with open(f'{PPG_PATH}/package.json', 'r') as file:
+    with open(f'{PPG_PATH}/package.json', 'r', encoding='utf-8') as file:
         return json.loads(file.read())
 
 def to_camel_case(app_name: str) -> str:
@@ -145,7 +145,7 @@ def init():
             template_path('src/main/python/main.py')
         ]
     )
-    with open('./src/build/settings/base.json', 'r') as file:
+    with open('./src/build/settings/base.json', 'r', encoding='utf-8') as file:
         json_data = json.loads(file.read())
         json_data['binding'] = python_bindings
         json_data['version'] = version
@@ -154,7 +154,7 @@ def init():
         ]
         file.close()
 
-    with open ('./src/build/settings/base.json', 'w') as file:
+    with open ('./src/build/settings/base.json', 'w', encoding='utf-8') as file:
         json.dump(json_data, file, indent=4)
         file.close()
 
@@ -175,7 +175,7 @@ def create(type="component"):
 
     name = to_camel_case(text("Component name",).ask())
 
-    with open("./src/build/settings/base.json", 'r') as file:
+    with open("./src/build/settings/base.json", 'r', encoding='utf-8') as file:
         binding = json.load(file)['binding']
 
     default_inherit = "QWidget" if binding in ("PySide6", "PySide2") else "QtWidget"
@@ -194,7 +194,7 @@ def create(type="component"):
             console.print("[yellow]Creation aborted by user.[/yellow]")
             return
 
-    with open(file_path, "w") as file:
+    with open(file_path, "w", encoding='utf-8') as file:
         file.write(code)
 
     console.print(f"[green]{type.capitalize()} [bold]{name}[/bold] created in: [cyan]{path}[/cyan][/green] ✅")
