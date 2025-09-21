@@ -46,7 +46,7 @@ def _load_package_json():
 
 def to_camel_case(app_name: str) -> str:
     """
-    Convierte un nombre de aplicación en formato snake_case o kebab-case a CamelCase.
+    Converts an application name from snake_case or kebab-case format to CamelCase.
     """
     parts = app_name.strip().replace('-', ' ').replace('_', ' ').split()
     return ''.join(word.capitalize() for word in parts)
@@ -119,7 +119,12 @@ def init():
     if not _has_module(python_bindings):
         _LOG.info(f"Installing {python_bindings}...")
         console.print(f"🛠️ Installing [bold cyan]{python_bindings}[/bold cyan][white]...[/white]")
-        subprocess.run([sys.executable, '-m', 'pip', 'install', python_bindings])
+
+        try:
+            subprocess.run([sys.executable, '-m', 'pip', 'install', python_bindings], check=True)
+        except subprocess.CalledProcessError as e:
+            console.print(f"[red]❌ Failed to install [bold cyan]{python_bindings}[/bold cyan]. Please check your internet connection and permissions, and try again.[/red]")
+            return
 
     console.print(f"\n✅ [bold cyan]{python_bindings}[/bold cyan] is installed!")
 

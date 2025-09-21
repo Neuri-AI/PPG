@@ -71,7 +71,6 @@ class ReactiveLineEdit(QLineEdit):
         value = ""
         if hasattr(self._parent, "get_nested"):
             value = self._parent.get_nested(self._store_key) or ""
-    
         if self.text() != str(value):
             self._updating_from_store = True
             self.setText(str(value))
