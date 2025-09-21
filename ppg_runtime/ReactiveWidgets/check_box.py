@@ -52,7 +52,8 @@ class ReactiveCheckBox(QCheckBox):
 
         if "." in self._store_key:
             model_key, nested_field = self._store_key.split(".", 1)
-            self._parent.update_nested_model(model_key, {nested_field: bool(state)})
+            if hasattr(self._parent, "update_nested_model"):
+                self._parent.update_nested_model(model_key, {nested_field: bool(state)})
         else:
             self._parent.update_store({self._store_key: bool(state)})
 
