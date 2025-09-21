@@ -260,7 +260,7 @@ class PPGHotReloadMixin:
             has cleared the old widgets.
         """
         try:
-            self.component_will_mount()
+            #self.component_will_mount() # Removed: should only be called during initial mount
             self._trigger_render()
             self._ensure_children_visibility()
             self.adjustSize()
