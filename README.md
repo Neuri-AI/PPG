@@ -16,10 +16,10 @@
 PPG is a modern and powerful framework for building scalable desktop applications with Python and Qt. It offers a component-based architecture inspired by **React**, an advanced global state management system (**Pydux**), and seamless support for **hybrid interfaces** that combine native widgets with modern web UIs. With a comprehensive CLI and an innovative **hot-reloading engine**, PPG provides a complete and efficient workflow for developers.
 
 <p align="center">
-    <a href="https://ppg.neuri.ai/"><strong>Explore docs 📖</strong></a>  |  <a href="https://ppg.neuri.ai/"><strong> View examples 💻</strong></a>
+    <a href="https://staging.neuri.ai/docs/intro"><strong>Explore docs 📖</strong></a>  |  <a href="https://staging.neuri.ai/docs/category/examples"><strong> View examples 💻</strong></a>
 </p>
 <p align="center">
-    <a href="https://ppg.neuri.ai/classic"><strong> Explore v1.1.2 (classic) docs 🏛️</strong></a>
+    <a href="https://ppg.neuri.ai/"><strong> Explore v1.1.2 (classic) docs 🏛️</strong></a>
 </p>
 
 ---
@@ -204,6 +204,16 @@ PPG supports hybrid development, allowing you to combine native Qt widgets with 
 - <https://twitter.com/Fredo_Dev>
 - <https://github.com/runesc>
 
+### Contributors
+
+I would like to thank the following people for their contributions to this project, your pull requests, bug reports, and suggestions have been invaluable:
+
+- **Kastakin** - <https://github.com/Kastakin>
+- **chenyulue** - <https://github.com/chenyulue>
+- **Abhinavreddy-B** - <https://github.com/Abhinavreddy-B>
+- **cccaballero** - <https://github.com/cccaballero>
+- **mkodes** - <https://github.com/mkodes>
+- **johnosbb** - <https://github.com/johnosbb>
 
 ### License
 
