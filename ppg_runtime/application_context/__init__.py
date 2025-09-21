@@ -63,8 +63,8 @@ except ImportError:
 
             except ImportError:
                 raise ImportError(
-                    "No se encontró PySide6, PySide2, PyQt6 ni PyQt5 instalado."
-                    "Por favor, instala uno de estos: pip install PySide6 (o PySide2, PyQt6, PyQt5)"
+                    "No PySide6, PySide2, PyQt6, or PyQt5 installation found."
+                    "Please install one of these: pip install PySide6 (or PySide2, PyQt6, PyQt5)"
                 )
 
 
