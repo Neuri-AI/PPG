@@ -1,6 +1,5 @@
 from .check_box import ReactiveCheckBox
 from .combo_box import ReactiveComboBox
-from .combo_box import ReactiveComboBox
 from .label import ReactiveLabel
 from .line_edit import ReactiveLineEdit
 from .slider import ReactiveSlider
