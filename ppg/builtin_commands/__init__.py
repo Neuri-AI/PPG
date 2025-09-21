@@ -67,7 +67,10 @@ def init():
     # Pedir datos con rich.prompt
     app = to_camel_case(Prompt.ask("App name", default="MyApp"))
     version = Prompt.ask("Version", default="1.0.0")
-    default_author = getuser().title()
+    try:
+        default_author = getuser().title()
+    except Exception:
+        default_author = "Unknown"
     author = Prompt.ask("Author", default=default_author)
 
     custom_style = Style([
