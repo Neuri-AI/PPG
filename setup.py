@@ -1,13 +1,12 @@
 import os
 import json
 from os.path import relpath, join
+from pathlib import Path
 from setuptools import setup, find_packages
-
 
 def _load_package_json():
     with open("package.json", "r", encoding="utf-8") as file:
         return json.loads(file.read())
-
 
 def _get_package_data(pkg_dir, data_subdir):
     result = []
@@ -19,12 +18,13 @@ def _get_package_data(pkg_dir, data_subdir):
 
 
 PACKAGE = _load_package_json()
+long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="ppg",
     version=PACKAGE["version"],
     description=PACKAGE["description"],
-    long_description=PACKAGE["long_description"],
+    long_description=long_description,
     long_description_content_type="text/markdown",
     author=PACKAGE["author"],
     author_email=PACKAGE["author_email"],
