@@ -4,22 +4,22 @@
 
 <h3 align="center">PPG - Python Package Generator</h3>
 
-![GitHub Release](https://img.shields.io/github/v/release/runesc/PPG?include_prereleases&display_name=release&color=stable&link=https%3A%2F%2Fgithub.com%2Frunesc%2FPPG%2Freleases)
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/runesc/PPG?color=%23ab7df8)
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/runesc/PPG?color=green)
-![GitHub forks](https://img.shields.io/github/forks/runesc/PPG)
-![GitHub stars](https://img.shields.io/github/stars/runesc/PPG)
-![GitHub licence](	https://img.shields.io/github/license/runesc/PPG)
+![GitHub Release](https://img.shields.io/github/v/release/Neuri-Ai/PPG?include_prereleases&display_name=tag&color=stable)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/Neuri-Ai/PPG?color=%23ab7df8)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/Neuri-Ai/PPG?color=green)
+![GitHub forks](https://img.shields.io/github/forks/Neuri-Ai/PPG)
+![GitHub stars](https://img.shields.io/github/stars/Neuri-Ai/PPG)
+![GitHub licence](	https://img.shields.io/github/license/Neuri-Ai/PPG)
 ![PyPI Downloads](https://static.pepy.tech/badge/ppg)
 
 
 PPG is a modern and powerful framework for building scalable desktop applications with Python and Qt. It offers a component-based architecture inspired by **React**, an advanced global state management system (**Pydux**), and seamless support for **hybrid interfaces** that combine native widgets with modern web UIs. With a comprehensive CLI and an innovative **hot-reloading engine**, PPG provides a complete and efficient workflow for developers.
 
 <p align="center">
-    <a href="https://staging.neuri.ai/docs/intro"><strong>Explore docs 📖</strong></a>  |  <a href="https://staging.neuri.ai/docs/category/examples"><strong> View examples 💻</strong></a>
+    <a href="https://ppg.neuri.ai/docs/latest/intro"><strong>Explore docs 📖</strong></a>  |  <a href="https://ppg.neuri.ai/docs/latest/category/examples"><strong> View examples 💻</strong></a>
 </p>
 <p align="center">
-    <a href="https://ppg.neuri.ai/"><strong> Explore v1.1.2 (classic) docs 🏛️</strong></a>
+    <a href="https://ppg.neuri.ai/docs/1.1.2/intro"><strong> Explore v1.1.2 (classic) docs 🏛️</strong></a>
 </p>
 
 ---
